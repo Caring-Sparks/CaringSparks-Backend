@@ -1,6 +1,6 @@
-import { Router, type Request } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import multer, { type FileFilterCallback } from "multer";
-import type { Express } from "express-serve-static-core";
+import type { InfluencerRequest } from "../types/multer";
 import {
   createInfluencer,
   getInfluencers,
@@ -38,56 +38,41 @@ const upload = multer({
 
 const uploadAny = upload.any();
 
-// POST /api/influencers - Create new influencer
+// Debug middleware with proper typing
+const debugMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  next();
+};
+// GET /stats - Get influencer statistics
+router.get("/stats", getInfluencerStats);
+
+// PUT /bulk/status - Bulk update status
+router.put("/bulk/status", bulkUpdateInfluencerStatus);
+
+// POST /createInfluencer - Create new influencer
 router.post(
   "/createInfluencer",
-  (req, res, next) => {
-    console.log("[v0] Content-Type:", req.headers["content-type"]);
-    console.log("[v0] Request method:", req.method);
-    next();
-  },
+  debugMiddleware,
   uploadAny,
-  (req, res, next) => {
-    console.log(
-      "[v0] After multer - Files received:",
-      req.files ? req.files.length : "No files"
-    );
-    console.log("[v0] After multer - Body keys:", Object.keys(req.body || {}));
-
-    if (req.body) {
-      Object.keys(req.body).forEach((key) => {
-        const value = req.body[key];
-        console.log(
-          `[v0] Form field: ${key} = ${
-            typeof value === "object" ? JSON.stringify(value) : value
-          }`
-        );
-      });
-    }
-
-    if (req.files && Array.isArray(req.files)) {
-      req.files.forEach((file: Express.Multer.File) => {
-        console.log(
-          `[v0] File received - Field: "${file.fieldname}", Name: "${file.originalname}", Size: ${file.size}`
-        );
-      });
-    }
-    next();
-  },
   createInfluencer
 );
 
+// GET / - Get all influencers
 router.get("/", getInfluencers);
 
+// GET /:id - Get influencer by ID
 router.get("/:id", getInfluencerById);
 
+// PATCH /:id/status - Update influencer status
 router.patch("/:id/status", updateInfluencerStatus);
 
-router.delete("/influencers/:id", deleteInfluencer);
-router.put("/influencers/:id", updateInfluencer);
+// PUT /:id - Update influencer (with file upload support)
+router.put(
+  "/:id",
+  uploadAny,
+  updateInfluencer
+);
 
-router.put("/influencers/bulk/status", bulkUpdateInfluencerStatus);
-
-router.get("/influencers/stats", getInfluencerStats);
+// DELETE /:id - Delete influencer
+router.delete("/:id", deleteInfluencer);
 
 export default router;

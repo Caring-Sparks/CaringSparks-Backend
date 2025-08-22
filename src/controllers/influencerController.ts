@@ -10,15 +10,30 @@ import {
 } from "../services/influencerEmailService";
 
 export const createInfluencer = async (
-  req: InfluencerRequest,
+  req: Request,
   res: Response
-) => {
+): Promise<void> => {
   try {
     const filesMap: { [key: string]: Express.Multer.File } = {};
-    if (req.files && Array.isArray(req.files)) {
-      req.files.forEach((file: Express.Multer.File) => {
-        filesMap[file.fieldname] = file;
-      });
+
+    // Handle different file upload formats that Multer can provide
+    if (req.files) {
+      if (Array.isArray(req.files)) {
+        // When files are uploaded as an array
+        req.files.forEach((file: Express.Multer.File) => {
+          filesMap[file.fieldname] = file;
+        });
+      } else {
+        // When files are uploaded as an object with field names
+        Object.keys(req.files).forEach((fieldname) => {
+          const fileArray = (
+            req.files as { [fieldname: string]: Express.Multer.File[] }
+          )[fieldname];
+          if (fileArray && fileArray.length > 0) {
+            filesMap[fieldname] = fileArray[0]; // Take the first file if multiple
+          }
+        });
+      }
     }
 
     // Parse JSON strings from FormData
@@ -53,29 +68,41 @@ export const createInfluencer = async (
     const missingFields = requiredFields.filter((field) => !parsedBody[field]);
 
     if (missingFields.length > 0) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: `Missing required fields: ${missingFields.join(", ")}`,
       });
+      return;
     }
 
     // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Invalid email format",
       });
+      return;
     }
 
     // Validate niches
-    const parsedNiches =
-      typeof niches === "string" ? JSON.parse(niches) : niches;
+    let parsedNiches;
+    try {
+      parsedNiches = typeof niches === "string" ? JSON.parse(niches) : niches;
+    } catch (e) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid niches format",
+      });
+      return;
+    }
+
     if (!Array.isArray(parsedNiches) || parsedNiches.length === 0) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "At least one niche must be selected",
       });
+      return;
     }
 
     // Check for existing influencer
@@ -83,10 +110,11 @@ export const createInfluencer = async (
       email: email.toLowerCase(),
     });
     if (existingInfluencer) {
-      return res.status(409).json({
+      res.status(409).json({
         success: false,
         message: "An influencer with this email already exists",
       });
+      return;
     }
 
     // Generate secure password
@@ -105,21 +133,21 @@ export const createInfluencer = async (
       location,
       niches: parsedNiches,
       audienceLocation,
-      malePercentage,
-      femalePercentage,
+      malePercentage: Number(malePercentage) || 0,
+      femalePercentage: Number(femalePercentage) || 0,
       status: "pending",
       emailSent: false,
 
       // Add calculated earnings fields from frontend
-      followerFee: parsedBody.followerFee,
-      impressionFee: parsedBody.impressionFee,
-      locationFee: parsedBody.locationFee,
-      nicheFee: parsedBody.nicheFee,
-      earningsPerPost: parsedBody.earningsPerPost,
-      earningsPerPostNaira: parsedBody.earningsPerPostNaira,
-      maxMonthlyEarnings: parsedBody.maxMonthlyEarnings,
-      maxMonthlyEarningsNaira: parsedBody.maxMonthlyEarningsNaira,
-      followersCount: parsedBody.followersCount,
+      followerFee: Number(parsedBody.followerFee) || 0,
+      impressionFee: Number(parsedBody.impressionFee) || 0,
+      locationFee: Number(parsedBody.locationFee) || 0,
+      nicheFee: Number(parsedBody.nicheFee) || 0,
+      earningsPerPost: Number(parsedBody.earningsPerPost) || 0,
+      earningsPerPostNaira: Number(parsedBody.earningsPerPostNaira) || 0,
+      maxMonthlyEarnings: Number(parsedBody.maxMonthlyEarnings) || 0,
+      maxMonthlyEarningsNaira: Number(parsedBody.maxMonthlyEarningsNaira) || 0,
+      followersCount: Number(parsedBody.followersCount) || 0,
     };
 
     const platforms = ["instagram", "twitter", "tiktok", "youtube", "facebook"];
@@ -135,30 +163,33 @@ export const createInfluencer = async (
         if (followers && url && impressions) {
           // Validate platform data
           if (isNaN(Number(followers)) || Number(followers) < 0) {
-            return res.status(400).json({
+            res.status(400).json({
               success: false,
               message: `Invalid followers count for ${platform}`,
             });
+            return;
           }
 
           if (!url.match(/^https?:\/\/.+/)) {
-            return res.status(400).json({
+            res.status(400).json({
               success: false,
               message: `Invalid URL format for ${platform}`,
             });
+            return;
           }
 
           if (isNaN(Number(impressions)) || Number(impressions) < 0) {
-            return res.status(400).json({
+            res.status(400).json({
               success: false,
               message: `Invalid impressions count for ${platform}`,
             });
+            return;
           }
 
           influencerData[platform] = {
-            followers,
+            followers: Number(followers),
             url,
-            impressions,
+            impressions: Number(impressions),
           };
 
           const proofFile =
@@ -194,10 +225,11 @@ export const createInfluencer = async (
             });
             uploadPromises.push(uploadPromise);
           } else {
-            return res.status(400).json({
+            res.status(400).json({
               success: false,
               message: `Proof file is required for ${platform}`,
             });
+            return;
           }
         }
       }
@@ -235,10 +267,11 @@ export const createInfluencer = async (
       await Promise.all(uploadPromises);
     } catch (uploadError) {
       console.error("File upload error:", uploadError);
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         error: "Failed to upload files",
       });
+      return;
     }
 
     const influencer = new Influencer(influencerData);
@@ -258,8 +291,6 @@ export const createInfluencer = async (
       console.error("Failed to send admin notification:", adminEmailError);
     }
 
-    const { password, ...influencerResponseData } = influencer.toObject();
-
     res.status(201).json({
       success: true,
       message: "Influencer registration successful",
@@ -274,18 +305,20 @@ export const createInfluencer = async (
     console.error("Influencer registration error:", error);
 
     if (error.name === "ValidationError") {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Validation error",
         errors: Object.values(error.errors).map((err: any) => err.message),
       });
+      return;
     }
 
     if (error.code === 11000) {
-      return res.status(409).json({
+      res.status(409).json({
         success: false,
         message: "An influencer with this email already exists",
       });
+      return;
     }
 
     res.status(500).json({
@@ -295,256 +328,49 @@ export const createInfluencer = async (
   }
 };
 
-export const getInfluencers = async (req: Request, res: Response) => {
-  try {
-    const page = Number.parseInt(req.query.page as string) || 1;
-    const limit = Number.parseInt(req.query.limit as string) || 10;
-    const status = req.query.status as string;
-    const search = req.query.search as string;
-
-    const filter: any = {};
-
-    if (status && ["pending", "approved", "rejected"].includes(status)) {
-      filter.status = status;
-    }
-
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { location: { $regex: search, $options: "i" } },
-      ];
-    }
-
-    const skip = (page - 1) * limit;
-    const totalCount = await Influencer.countDocuments(filter);
-    const influencers = await Influencer.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .select("-password"); // Exclude password from results
-
-    const totalPages = Math.ceil(totalCount / limit);
-
-    res.json({
-      success: true,
-      data: {
-        influencers,
-        pagination: {
-          currentPage: page,
-          totalPages,
-          totalCount,
-          hasNextPage: page < totalPages,
-          hasPrevPage: page > 1,
-          limit,
-        },
-      },
-    });
-  } catch (error: any) {
-    console.error("Get influencers error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal server error occurred",
-    });
-  }
-};
-
-export const getInfluencerById = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid influencer ID format",
-      });
-    }
-
-    const influencer = await Influencer.findById(id).select("-password");
-
-    if (!influencer) {
-      return res.status(404).json({
-        success: false,
-        error: "Influencer not found",
-      });
-    }
-
-    res.json({
-      success: true,
-      data: { influencer },
-    });
-  } catch (error: any) {
-    console.error("Get influencer by ID error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal server error occurred",
-    });
-  }
-};
-
-export const updateInfluencerStatus = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid influencer ID format",
-      });
-    }
-
-    if (!["pending", "approved", "rejected"].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid status. Must be: pending, approved, or rejected",
-      });
-    }
-
-    const influencer = await Influencer.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    ).select("-password");
-
-    if (!influencer) {
-      return res.status(404).json({
-        success: false,
-        error: "Influencer not found",
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Influencer status updated successfully",
-      data: { influencer },
-    });
-  } catch (error: any) {
-    console.error("Update influencer status error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Internal server error occurred",
-    });
-  }
-};
-
-// Delete influencer
-export const deleteInfluencer = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    // Validate MongoDB ObjectId format
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid influencer ID format",
-      });
-    }
-
-    const influencer = await Influencer.findById(id);
-
-    if (!influencer) {
-      return res.status(404).json({
-        success: false,
-        error: "Influencer not found",
-      });
-    }
-
-    // Clean up uploaded files from Cloudinary before deletion
-    const filesToDelete: string[] = [];
-
-    // Collect all proof URLs
-    const platforms = ["instagram", "twitter", "tiktok", "youtube"];
-    platforms.forEach((platform) => {
-      const platformData = (influencer as any)[platform];
-      if (platformData?.proofUrl) {
-        filesToDelete.push(platformData.proofUrl);
-      }
-    });
-
-    if (influencer.audienceProofUrl) {
-      filesToDelete.push(influencer.audienceProofUrl);
-    }
-
-    // Delete files from Cloudinary
-    const deletePromises = filesToDelete.map(async (url) => {
-      try {
-        // Extract public_id from Cloudinary URL
-        const urlParts = url.split("/");
-        const fileWithExt = urlParts[urlParts.length - 1];
-        const publicId = urlParts
-          .slice(-3)
-          .join("/")
-          .replace(/\.[^/.]+$/, "");
-
-        await cloudinary.uploader.destroy(publicId);
-        console.log(`Deleted file from Cloudinary: ${publicId}`);
-      } catch (error) {
-        console.error(`Failed to delete file from Cloudinary: ${url}`, error);
-        // Continue deletion even if file cleanup fails
-      }
-    });
-
-    // Execute file deletions (don't wait for completion to avoid blocking)
-    Promise.all(deletePromises).catch((error) => {
-      console.error("Some files could not be deleted from Cloudinary:", error);
-    });
-
-    // Delete influencer from database
-    await Influencer.findByIdAndDelete(id);
-
-    res.status(200).json({
-      success: true,
-      message: "Influencer deleted successfully",
-      data: {
-        deletedInfluencer: {
-          id: influencer._id,
-          name: influencer.name,
-          email: influencer.email,
-          status: influencer.status,
-        },
-      },
-    });
-  } catch (error: any) {
-    console.error("Delete influencer error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to delete influencer",
-    });
-  }
-};
-
-// Update influencer details
 export const updateInfluencer = async (
-  req: InfluencerRequest,
+  req: Request,
   res: Response
-) => {
+): Promise<void> => {
   try {
     const { id } = req.params;
 
     // Validate MongoDB ObjectId format
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Invalid influencer ID format",
       });
+      return;
     }
 
     // Check if influencer exists
     const existingInfluencer = await Influencer.findById(id);
     if (!existingInfluencer) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: "Influencer not found",
       });
+      return;
     }
 
     // Handle file uploads if present
     const filesMap: { [key: string]: Express.Multer.File } = {};
-    if (req.files && Array.isArray(req.files)) {
-      req.files.forEach((file: Express.Multer.File) => {
-        filesMap[file.fieldname] = file;
-      });
+    if (req.files) {
+      if (Array.isArray(req.files)) {
+        req.files.forEach((file: Express.Multer.File) => {
+          filesMap[file.fieldname] = file;
+        });
+      } else {
+        Object.keys(req.files).forEach((fieldname) => {
+          const fileArray = (
+            req.files as { [fieldname: string]: Express.Multer.File[] }
+          )[fieldname];
+          if (fileArray && fileArray.length > 0) {
+            filesMap[fieldname] = fileArray[0];
+          }
+        });
+      }
     }
 
     // Parse JSON strings from FormData
@@ -587,29 +413,60 @@ export const updateInfluencer = async (
     const updates: any = {};
     Object.keys(parsedBody).forEach((key) => {
       if (allowedUpdates.includes(key) && parsedBody[key] !== undefined) {
-        updates[key] = parsedBody[key];
+        // Convert numeric fields
+        if (
+          [
+            "malePercentage",
+            "femalePercentage",
+            "followerFee",
+            "impressionFee",
+            "locationFee",
+            "nicheFee",
+            "earningsPerPost",
+            "earningsPerPostNaira",
+            "maxMonthlyEarnings",
+            "maxMonthlyEarningsNaira",
+            "followersCount",
+          ].includes(key)
+        ) {
+          updates[key] = Number(parsedBody[key]) || 0;
+        } else {
+          updates[key] = parsedBody[key];
+        }
       }
     });
 
     // Validate email format if email is being updated (but don't allow email updates for security)
     if (parsedBody.email && parsedBody.email !== existingInfluencer.email) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Email cannot be updated. Create a new account if needed.",
       });
+      return;
     }
 
     // Validate niches if provided
     if (updates.niches) {
-      const parsedNiches =
-        typeof updates.niches === "string"
-          ? JSON.parse(updates.niches)
-          : updates.niches;
+      let parsedNiches;
+      try {
+        parsedNiches =
+          typeof updates.niches === "string"
+            ? JSON.parse(updates.niches)
+            : updates.niches;
+      } catch (e) {
+        res.status(400).json({
+          success: false,
+          error: "Invalid niches format",
+        });
+        return;
+      }
+
       if (!Array.isArray(parsedNiches) || parsedNiches.length === 0) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: "At least one niche must be selected",
         });
+        return;
       }
       updates.niches = parsedNiches;
     }
@@ -631,24 +488,27 @@ export const updateInfluencer = async (
           impressions !== undefined
         ) {
           if (isNaN(Number(followers)) || Number(followers) < 0) {
-            return res.status(400).json({
+            res.status(400).json({
               success: false,
               error: `Invalid followers count for ${platform}`,
             });
+            return;
           }
 
           if (!url.match(/^https?:\/\/.+/)) {
-            return res.status(400).json({
+            res.status(400).json({
               success: false,
               error: `Invalid URL format for ${platform}`,
             });
+            return;
           }
 
           if (isNaN(Number(impressions)) || Number(impressions) < 0) {
-            return res.status(400).json({
+            res.status(400).json({
               success: false,
               error: `Invalid impressions count for ${platform}`,
             });
+            return;
           }
 
           // Update platform data
@@ -657,9 +517,9 @@ export const updateInfluencer = async (
             ...(existingPlatformData?.toObject
               ? existingPlatformData.toObject()
               : existingPlatformData || {}),
-            followers,
+            followers: Number(followers),
             url,
-            impressions,
+            impressions: Number(impressions),
           };
 
           // Handle new proof file upload
@@ -783,10 +643,11 @@ export const updateInfluencer = async (
         console.log("All file uploads completed successfully");
       } catch (uploadError) {
         console.error("File upload error during update:", uploadError);
-        return res.status(500).json({
+        res.status(500).json({
           success: false,
           error: "Failed to upload files",
         });
+        return;
       }
     }
 
@@ -800,10 +661,11 @@ export const updateInfluencer = async (
     }).select("-password");
 
     if (!updatedInfluencer) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: "Influencer not found",
       });
+      return;
     }
 
     res.status(200).json({
@@ -816,16 +678,245 @@ export const updateInfluencer = async (
 
     // Handle specific MongoDB errors
     if (error.name === "ValidationError") {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Validation error",
         details: Object.values(error.errors).map((err: any) => err.message),
       });
+      return;
     }
 
     res.status(500).json({
       success: false,
       error: "Failed to update influencer",
+    });
+  }
+};
+
+export const getInfluencers = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const page = Number.parseInt(req.query.page as string) || 1;
+    const limit = Number.parseInt(req.query.limit as string) || 10;
+    const status = req.query.status as string;
+    const search = req.query.search as string;
+
+    const filter: any = {};
+
+    if (status && ["pending", "approved", "rejected"].includes(status)) {
+      filter.status = status;
+    }
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { location: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+    const totalCount = await Influencer.countDocuments(filter);
+    const influencers = await Influencer.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select("-password");
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    res.json({
+      success: true,
+      data: {
+        influencers,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalCount,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+          limit,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error("Get influencers error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error occurred",
+    });
+  }
+};
+export const getInfluencerById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid influencer ID format",
+      });
+      return;
+    }
+
+    const influencer = await Influencer.findById(id).select("-password");
+
+    if (!influencer) {
+      res.status(404).json({
+        success: false,
+        error: "Influencer not found",
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: { influencer },
+    });
+  } catch (error: any) {
+    console.error("Get influencer by ID error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error occurred",
+    });
+  }
+};
+
+export const updateInfluencerStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid influencer ID format",
+      });
+      return;
+    }
+
+    if (!["pending", "approved", "rejected"].includes(status)) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid status. Must be: pending, approved, or rejected",
+      });
+      return;
+    }
+
+    const influencer = await Influencer.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    ).select("-password");
+
+    if (!influencer) {
+      res.status(404).json({
+        success: false,
+        error: "Influencer not found",
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: "Influencer status updated successfully",
+      data: { influencer },
+    });
+  } catch (error: any) {
+    console.error("Update influencer status error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error occurred",
+    });
+  }
+};
+
+// Delete influencer
+export const deleteInfluencer = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Validate MongoDB ObjectId format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid influencer ID format",
+      });
+      return;
+    }
+
+    const influencer = await Influencer.findById(id);
+
+    if (!influencer) {
+      res.status(404).json({
+        success: false,
+        error: "Influencer not found",
+      });
+      return;
+    }
+
+    // Clean up uploaded files from Cloudinary before deletion
+    const filesToDelete: string[] = [];
+
+    // Collect all proof URLs
+    const platforms = ["instagram", "twitter", "tiktok", "youtube"];
+    platforms.forEach((platform) => {
+      const platformData = (influencer as any)[platform];
+      if (platformData?.proofUrl) {
+        filesToDelete.push(platformData.proofUrl);
+      }
+    });
+
+    if (influencer.audienceProofUrl) {
+      filesToDelete.push(influencer.audienceProofUrl);
+    }
+
+    // Delete files from Cloudinary
+    const deletePromises = filesToDelete.map(async (url) => {
+      try {
+        // Extract public_id from Cloudinary URL
+        const urlParts = url.split("/");
+        const fileWithExt = urlParts[urlParts.length - 1];
+        const publicId = urlParts
+          .slice(-3)
+          .join("/")
+          .replace(/\.[^/.]+$/, "");
+
+        await cloudinary.uploader.destroy(publicId);
+        console.log(`Deleted file from Cloudinary: ${publicId}`);
+      } catch (error) {
+        console.error(`Failed to delete file from Cloudinary: ${url}`, error);
+        // Continue deletion even if file cleanup fails
+      }
+    });
+
+    // Execute file deletions (don't wait for completion to avoid blocking)
+    Promise.all(deletePromises).catch((error) => {
+      console.error("Some files could not be deleted from Cloudinary:", error);
+    });
+
+    // Delete influencer from database
+    await Influencer.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Influencer deleted successfully",
+      data: {
+        deletedInfluencer: {
+          id: influencer._id,
+          name: influencer.name,
+          email: influencer.email,
+          status: influencer.status,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error("Delete influencer error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to delete influencer",
     });
   }
 };
@@ -970,18 +1061,20 @@ export const bulkUpdateInfluencerStatus = async (
 
     // Validate status
     if (!["pending", "approved", "rejected"].includes(status)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Invalid status. Must be: pending, approved, or rejected",
       });
+      return;
     }
 
     // Validate influencer IDs
     if (!Array.isArray(influencerIds) || influencerIds.length === 0) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "influencerIds must be a non-empty array",
       });
+      return;
     }
 
     // Validate all IDs are valid MongoDB ObjectIds
@@ -989,10 +1082,11 @@ export const bulkUpdateInfluencerStatus = async (
       (id) => !id.match(/^[0-9a-fA-F]{24}$/)
     );
     if (invalidIds.length > 0) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: `Invalid influencer ID format: ${invalidIds.join(", ")}`,
       });
+      return;
     }
 
     // Update multiple influencers
