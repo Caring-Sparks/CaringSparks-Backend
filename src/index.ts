@@ -4,6 +4,7 @@ import cors from "cors";
 import connectDB from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import brandRoutes from "./routes/brandRoutes";
+import influencerRoutes from "./routes/influencerRoutes";
 //ENV config
 dotenv.config();
 
@@ -20,6 +21,7 @@ connectDB();
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/brands", brandRoutes);
+app.use("/api/influencers", influencerRoutes);
 app.get("/", (_, res) => res.send("API is running 🚀"));
 
 // Start server
