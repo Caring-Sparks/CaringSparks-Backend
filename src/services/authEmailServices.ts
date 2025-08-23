@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const companyName = "CaringSparks";
-const frontendUrl = process.env.FRONTEND_URL || "https://yourapp.com";
+const frontendUrl = "https://caring-sparks.vercel.app/";
 
 // Password Reset Email Template
 const getPasswordResetEmailTemplate = (
@@ -666,17 +666,5 @@ export const sendPasswordResetConfirmationEmail = async (
         `Failed to send password reset confirmation email: ${error.message}`
       );
     }
-  }
-};
-
-// Optional: Function to test email configuration
-export const testEmailConfiguration = async (): Promise<boolean> => {
-  try {
-    await transporter.verify();
-    console.log("Email configuration is valid");
-    return true;
-  } catch (error) {
-    console.error("Email configuration is invalid:", error);
-    return false;
   }
 };

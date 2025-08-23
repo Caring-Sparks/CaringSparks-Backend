@@ -6,7 +6,7 @@ export const sendBrandEmail = async (
   brandName: string
 ) => {
   const companyName = "CaringSparks";
-  const loginUrl = "CaringSparks"; //replace after deployment
+  const loginUrl = "https://caring-sparks.vercel.app/";
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -19,7 +19,7 @@ export const sendBrandEmail = async (
   const brandMailOptions = {
     from: `"CaringSparks - " <${process.env.EMAIL_USER}>`,
     to,
-    subject: `Welcome to CaringSparks, ${brandName}!`, // Added brand name here
+    subject: `Welcome to CaringSparks, ${brandName}!`,
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -284,7 +284,7 @@ export const sendBrandEmail = async (
       <div class="footer-links">
         <a href="${loginUrl}">Login</a>
         <a href="mailto:support@caringsparks.com">Support</a>
-        <a href="https://caringsparks.com/privacy">Privacy Policy</a>
+        <a href="https://caring-sparks.vercel.app/">Privacy Policy</a>
       </div>
       
       <p class="footer-text">
@@ -433,147 +433,6 @@ export const sendBrandEmail = async (
 `,
   };
 
-  const adminOnboarding = {
-    from: `"CaringSparks System" <${process.env.EMAIL_USER}>`,
-    to: process.env.EMAIL_USER,
-    subject: `🎉 New Brand Registration: ${brandName} - CaringSparks`, // Added brand name here
-    html: `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Brand Registration</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #f8fafc;
-      font-family: 'Source Sans Pro', Arial, sans-serif;
-      line-height: 1.6;
-      color: #475569;
-    }
-    .email-container {
-      max-width: 600px;
-      margin: 20px auto;
-      background-color: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .header {
-      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-      padding: 30px 20px;
-      text-align: center;
-    }
-    .header h1 {
-      color: #ffffff;
-      margin: 0;
-      font-size: 24px;
-      font-weight: 700;
-    }
-    .content {
-      padding: 30px 20px;
-    }
-    .brand-info {
-      background-color: #f1f5f9;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 20px 0;
-    }
-    .info-row {
-      margin-bottom: 10px;
-    }
-    .info-label {
-      font-weight: 600;
-      color: #374151;
-      display: inline-block;
-      width: 120px;
-    }
-    .info-value {
-      color: #1f2937;
-      font-weight: 500;
-    }
-    .timestamp {
-      background-color: #fef3c7;
-      border-left: 4px solid #f59e0b;
-      padding: 12px 16px;
-      margin: 20px 0;
-      border-radius: 0 8px 8px 0;
-    }
-    .footer {
-      background-color: #f8fafc;
-      padding: 20px;
-      text-align: center;
-      border-top: 1px solid #e5e7eb;
-      font-size: 14px;
-      color: #6b7280;
-    }
-    .highlight {
-      background-color: #ddd6fe;
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: #5b21b6;
-      font-weight: 600;
-    }
-  </style>
-</head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <h1>🎉 New Brand Registration</h1>
-    </div>
-    
-    <div class="content">
-      <p>A new brand <span class="highlight">${brandName}</span> has successfully registered on the CaringSparks platform!</p>
-      
-      <div class="brand-info">
-        <h3 style="margin-top: 0; color: #374151;">Brand Details:</h3>
-        <div class="info-row">
-          <span class="info-label">Brand Name:</span>
-          <span class="info-value">${brandName}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Email:</span>
-          <span class="info-value">${to}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Status:</span>
-          <span class="info-value">✅ Active</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Platform:</span>
-          <span class="info-value">CaringSparks</span>
-        </div>
-      </div>
-      
-      <div class="timestamp">
-        <p style="margin: 0;">
-          <strong>Registration Time:</strong> ${new Date().toLocaleString()}
-        </p>
-      </div>
-      
-      <p>The brand <strong>${brandName}</strong> has been sent their welcome email with login credentials and can now access their dashboard.</p>
-      
-      <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">
-        This is an automated notification from the CaringSparks registration system.
-      </p>
-    </div>
-    
-    <div class="footer">
-      <p>CaringSparks Admin Notifications</p>
-      <p>© ${new Date().getFullYear()} CaringSparks. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>
-`,
-  };
-
-  try {
-    await transporter.sendMail(adminOnboarding);
-  } catch (error: any) {
-    console.log(error);
-  }
   try {
     await Promise.all([
       transporter.sendMail(brandMailOptions),

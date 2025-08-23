@@ -14,7 +14,7 @@ export const sendInfluencerWelcomeEmail = async (
   plainPassword: string
 ) => {
   const companyName = "CaringSparks";
-  const loginUrl = "CaringSparks"; //replace after deployment
+  const loginUrl = "https://caring-sparks.vercel.app/";
 
   const mailOptions = {
     from: `"CaringSparks - Influencer Program" <${process.env.EMAIL_USER}>`,
@@ -552,7 +552,6 @@ export const sendInfluencerWelcomeEmail = async (
 };
 
 export const sendAdminNotificationEmail = async (influencer: IInfluencer) => {
-  const companyName = "CaringSparks";
 
   const mailOptions = {
     from: `"CaringSparks System" <${process.env.EMAIL_USER}>`,
