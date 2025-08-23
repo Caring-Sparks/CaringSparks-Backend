@@ -285,7 +285,7 @@ const getPasswordResetEmailTemplate = (
       </p>
       
       <div class="footer-links">
-        <a href="${frontendUrl}/login">Login</a>
+        <a href="${frontendUrl}">Login</a>
         <a href="mailto:support@caringsparks.com">Support</a>
         <a href="${frontendUrl}/privacy">Privacy Policy</a>
       </div>
@@ -301,7 +301,7 @@ const getPasswordResetEmailTemplate = (
 
 // Password Reset Confirmation Email Template
 const getPasswordResetConfirmationTemplate = (email: string) => {
-  const loginUrl = `${frontendUrl}/login`;
+  const loginUrl = `${frontendUrl}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
