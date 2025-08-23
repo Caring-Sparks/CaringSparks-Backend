@@ -48,6 +48,10 @@ export interface IInfluencer extends Document {
   // Metadata
   status: "pending" | "approved" | "rejected";
   emailSent: boolean;
+  isValidated: boolean;
+
+  passwordResetToken: string;
+  passwordResetExpires: string;
 }
 
 // Validate niche options
@@ -371,6 +375,15 @@ const InfluencerSchema: Schema = new Schema(
     emailSent: {
       type: Boolean,
       default: false,
+    },
+    passwordResetToken: {
+      type: String,
+    },
+    passwordResetExpires: {
+      type: String,
+    },
+    isValidated: {
+      type: Boolean,
     },
   },
   {

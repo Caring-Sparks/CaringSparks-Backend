@@ -29,6 +29,8 @@ export interface IBrand extends Document {
   password: string;
   hasPaid: boolean;
   isValidated: boolean;
+  passwordResetToken: string;
+  passwordResetExpires: string;
 }
 
 const brandSchema: Schema = new Schema(
@@ -152,6 +154,12 @@ const brandSchema: Schema = new Schema(
     isValidated: {
       type: Boolean,
       default: false,
+    },
+    passwordResetToken: {
+      type: String,
+    },
+    passwordResetExpires: {
+      type: String,
     },
   },
   {

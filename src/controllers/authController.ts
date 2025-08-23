@@ -489,6 +489,7 @@ export const resetPassword = async (req: Request, res: Response) => {
       password: hashedPassword,
       passwordResetToken: undefined,
       passwordResetExpires: undefined,
+      isValidated: true,
     });
 
     // Send confirmation email
