@@ -29,6 +29,10 @@ export interface IInfluencer extends Document {
   tiktok?: PlatformData;
   youtube?: PlatformData;
   facebook?: PlatformData;
+  linkedin?: PlatformData;
+  discord?: PlatformData;
+  threads?: PlatformData;
+  snapchat?: PlatformData;
 
   // Calculated earnings fields (from frontend)
   followerFee?: number;
@@ -315,6 +319,138 @@ const InfluencerSchema: Schema = new Schema(
             return !isNaN(Number(v)) && Number(v) >= 0;
           },
           message: "Invalid impressions count for Facebook",
+        },
+      },
+      proofUrl: String,
+    },
+    linkedin: {
+      followers: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return !isNaN(Number(v)) && Number(v) >= 0;
+          },
+          message: "Invalid followers count for LinkedIn",
+        },
+      },
+      url: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return v.match(/^https?:\/\/.+/);
+          },
+          message: "Invalid LinkedIn URL format",
+        },
+      },
+      impressions: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return !isNaN(Number(v)) && Number(v) >= 0;
+          },
+          message: "Invalid impressions count for LinkedIn",
+        },
+      },
+      proofUrl: String,
+    },
+    discord: {
+      followers: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return !isNaN(Number(v)) && Number(v) >= 0;
+          },
+          message: "Invalid followers count for Discord",
+        },
+      },
+      url: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return v.match(/^https?:\/\/.+/);
+          },
+          message: "Invalid Discord URL format",
+        },
+      },
+      impressions: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return !isNaN(Number(v)) && Number(v) >= 0;
+          },
+          message: "Invalid impressions count for Discord",
+        },
+      },
+      proofUrl: String,
+    },
+    threads: {
+      followers: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return !isNaN(Number(v)) && Number(v) >= 0;
+          },
+          message: "Invalid followers count for Threads",
+        },
+      },
+      url: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return v.match(/^https?:\/\/.+/);
+          },
+          message: "Invalid Threads URL format",
+        },
+      },
+      impressions: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return !isNaN(Number(v)) && Number(v) >= 0;
+          },
+          message: "Invalid impressions count for Threads",
+        },
+      },
+      proofUrl: String,
+    },
+    snapchat: {
+      followers: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return !isNaN(Number(v)) && Number(v) >= 0;
+          },
+          message: "Invalid followers count for Snapchat",
+        },
+      },
+      url: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return v.match(/^https?:\/\/.+/);
+          },
+          message: "Invalid Snapchat URL format",
+        },
+      },
+      impressions: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            return !isNaN(Number(v)) && Number(v) >= 0;
+          },
+          message: "Invalid impressions count for Snapchat",
         },
       },
       proofUrl: String,

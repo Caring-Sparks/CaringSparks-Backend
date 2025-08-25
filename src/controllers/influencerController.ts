@@ -150,7 +150,17 @@ export const createInfluencer = async (
       followersCount: Number(parsedBody.followersCount) || 0,
     };
 
-    const platforms = ["instagram", "twitter", "tiktok", "youtube", "facebook"];
+    const platforms = [
+      "instagram",
+      "twitter",
+      "tiktok",
+      "youtube",
+      "facebook",
+      "linkedin",
+      "threads",
+      "discord",
+      "snapchat",
+    ];
     const uploadPromises: Promise<any>[] = [];
 
     for (const platform of platforms) {
@@ -208,13 +218,8 @@ export const createInfluencer = async (
                 },
                 (error, result) => {
                   if (error) {
-                    console.log(`[v0] ${platform} upload error:`, error);
                     reject(error);
                   } else {
-                    console.log(
-                      `[v0] ${platform} upload success:`,
-                      result?.secure_url
-                    );
                     influencerData[platform].proofUrl = result?.secure_url;
                     resolve(result);
                   }

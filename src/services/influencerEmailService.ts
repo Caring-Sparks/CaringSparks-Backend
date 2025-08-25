@@ -403,6 +403,9 @@ export const sendInfluencerWelcomeEmail = async (
         influencer.twitter ||
         influencer.tiktok ||
         influencer.facebook ||
+        influencer.linkedin ||
+        influencer.threads ||
+        influencer.discord ||
         influencer.youtube
           ? `
       <!-- Social Media Platforms -->
@@ -498,6 +501,74 @@ export const sendInfluencerWelcomeEmail = async (
         `
             : ""
         }
+                ${
+                  influencer.linkedin
+                    ? `
+        <div class="platform-item">
+          <div class="platform-name">💼 LinkedIn</div>
+          <div class="platform-stats">${
+            influencer.linkedin.followers || "N/A"
+          } followers • ${
+                        influencer.linkedin.impressions || "N/A"
+                      } impressions</div>
+          <div class="platform-url">${
+            influencer.linkedin.url || "URL not provided"
+          }</div>
+        </div>
+        `
+                    : ""
+                }
+                ${
+                  influencer.threads
+                    ? `
+        <div class="platform-item">
+          <div class="platform-name">🧵 Threads</div>
+          <div class="platform-stats">${
+            influencer.threads.followers || "N/A"
+          } followers • ${
+                        influencer.threads.impressions || "N/A"
+                      } impressions</div>
+          <div class="platform-url">${
+            influencer.threads.url || "URL not provided"
+          }</div>
+        </div>
+        `
+                    : ""
+                }
+                ${
+                  influencer.discord
+                    ? `
+        <div class="platform-item">
+          <div class="platform-name">🎮 Discord</div>
+          <div class="platform-stats">${
+            influencer.discord.followers || "N/A"
+          } followers • ${
+                        influencer.discord.impressions || "N/A"
+                      } impressions</div>
+          <div class="platform-url">${
+            influencer.discord.url || "URL not provided"
+          }</div>
+        </div>
+        `
+                    : ""
+                }
+                                ${
+                                  influencer.snapchat
+                                    ? `
+        <div class="platform-item">
+          <div class="platform-name">👻Snapchat</div>
+          <div class="platform-stats">${
+            influencer.snapchat.followers || "N/A"
+          } followers • ${
+                                        influencer.snapchat.impressions || "N/A"
+                                      } impressions</div>
+          <div class="platform-url">${
+            influencer.snapchat.url || "URL not provided"
+          }</div>
+        </div>
+        `
+                                    : ""
+                                }
       </div>
       `
           : ""
@@ -552,7 +623,6 @@ export const sendInfluencerWelcomeEmail = async (
 };
 
 export const sendAdminNotificationEmail = async (influencer: IInfluencer) => {
-
   const mailOptions = {
     from: `"CaringSparks System" <${process.env.EMAIL_USER}>`,
     to: process.env.EMAIL_USER,
@@ -919,9 +989,17 @@ export const sendAdminNotificationEmail = async (influencer: IInfluencer) => {
       </div>
       
       ${
-        ["instagram", "twitter", "tiktok", "youtube", "facebook"].some(
-          (platform) => influencer[platform as keyof IInfluencer]
-        )
+        [
+          "instagram",
+          "twitter",
+          "tiktok",
+          "youtube",
+          "facebook",
+          "linkedin",
+          "threads",
+          "discord",
+          "snapchat",
+        ].some((platform) => influencer[platform as keyof IInfluencer])
           ? `
       <!-- Social Media Platforms -->
       <div class="platforms-card">
@@ -1071,6 +1149,118 @@ export const sendAdminNotificationEmail = async (influencer: IInfluencer) => {
         `
             : ""
         }
+                ${
+                  influencer.linkedin
+                    ? `
+        <div class="platform-item">
+          <div class="platform-header">
+            <span class="platform-name">💼 Linkedin</span>
+          </div>
+          <div class="platform-stats">
+            <div class="stat-item">
+              <div class="stat-number">${
+                influencer.linkedin.followers || "N/A"
+              }</div>
+              <div class="stat-label">Subscribers</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">${
+                influencer.linkedin.impressions || "N/A"
+              }</div>
+              <div class="stat-label">Impressions</div>
+            </div>
+          </div>
+          <div class="platform-url">${
+            influencer.linkedin.url || "URL not provided"
+          }</div>
+        </div>
+        `
+                    : ""
+                }
+                ${
+                  influencer.discord
+                    ? `
+        <div class="platform-item">
+          <div class="platform-header">
+            <span class="platform-name">🎮 Discord</span>
+          </div>
+          <div class="platform-stats">
+            <div class="stat-item">
+              <div class="stat-number">${
+                influencer.discord.followers || "N/A"
+              }</div>
+              <div class="stat-label">Subscribers</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">${
+                influencer.discord.impressions || "N/A"
+              }</div>
+              <div class="stat-label">Impressions</div>
+            </div>
+          </div>
+          <div class="platform-url">${
+            influencer.discord.url || "URL not provided"
+          }</div>
+        </div>
+        `
+                    : ""
+                }
+                ${
+                  influencer.threads
+                    ? `
+        <div class="platform-item">
+          <div class="platform-header">
+            <span class="platform-name">🧵 Threads</span>
+          </div>
+          <div class="platform-stats">
+            <div class="stat-item">
+              <div class="stat-number">${
+                influencer.threads.followers || "N/A"
+              }</div>
+              <div class="stat-label">Subscribers</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">${
+                influencer.threads.impressions || "N/A"
+              }</div>
+              <div class="stat-label">Impressions</div>
+            </div>
+          </div>
+          <div class="platform-url">${
+            influencer.threads.url || "URL not provided"
+          }</div>
+        </div>
+        `
+                    : ""
+                }
+                                ${
+                                  influencer.snapchat
+                                    ? `
+        <div class="platform-item">
+          <div class="platform-header">
+            <span class="platform-name">👻 Snapchat</span>
+          </div>
+          <div class="platform-stats">
+            <div class="stat-item">
+              <div class="stat-number">${
+                influencer.snapchat.followers || "N/A"
+              }</div>
+              <div class="stat-label">Subscribers</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">${
+                influencer.snapchat.impressions || "N/A"
+              }</div>
+              <div class="stat-label">Impressions</div>
+            </div>
+          </div>
+          <div class="platform-url">${
+            influencer.snapchat.url || "URL not provided"
+          }</div>
+        </div>
+        `
+                                    : ""
+                                }
       </div>
       `
           : ""
