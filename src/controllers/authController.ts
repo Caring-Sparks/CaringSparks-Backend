@@ -26,13 +26,13 @@ const generateRefreshToken = (id: string, role: string) => {
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     // Input validation
-    if (!email || !password) {
+    if (!email || !password || !role) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: "Email, password, and role are required",
       });
     }
 
@@ -45,31 +45,32 @@ export const loginUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Explicitly tell TS that model is a mongoose Model
-    const userModels: { model: Model<any>; role: string }[] = [
-      { model: Brand, role: "brand" },
-      { model: Influencer, role: "influencer" },
-      { model: Admin, role: "admin" },
-    ];
-
-    let user: any = null;
-    let role = "";
-
-    for (const { model, role: r } of userModels) {
-      const foundUser = await model
-        .findOne({ email: email.toLowerCase() })
-        .exec();
-      if (foundUser) {
-        user = foundUser;
-        role = r;
-        break;
-      }
+    // Role validation
+    const validRoles = ["brand", "influencer", "admin"];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role. Must be one of: brand, influencer, admin",
+      });
     }
+
+    // Map role to corresponding model
+    const roleModelMap: { [key: string]: { model: Model<any>; role: string } } =
+      {
+        brand: { model: Brand, role: "brand" },
+        influencer: { model: Influencer, role: "influencer" },
+        admin: { model: Admin, role: "admin" },
+      };
+
+    const { model } = roleModelMap[role];
+
+    // Find user in the specific role's collection
+    const user = await model.findOne({ email: email.toLowerCase() }).exec();
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Invalid credentials or role mismatch",
       });
     }
 
@@ -81,6 +82,15 @@ export const loginUser = async (req: Request, res: Response) => {
       });
     }
 
+    // Additional status checks for other roles if needed
+    if (role === "influencer" && user.status === "pending") {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Account is pending approval. Please wait for admin verification.",
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({
@@ -88,9 +98,6 @@ export const loginUser = async (req: Request, res: Response) => {
         message: "Invalid credentials",
       });
     }
-
-    // Update last login
-    await user.updateOne({ lastLogin: new Date() });
 
     const token = generateToken(user._id.toString(), role);
     const refreshToken = generateRefreshToken(user._id.toString(), role);
@@ -109,6 +116,10 @@ export const loginUser = async (req: Request, res: Response) => {
         user: {
           _id: user._id,
           role,
+          // Include additional user info based on role if needed
+          ...(role === "influencer" && { status: user.status }),
+          ...(role === "brand" && { companyName: user.companyName }),
+          ...(role === "admin" && { permissions: user.permissions }),
         },
         token,
       },

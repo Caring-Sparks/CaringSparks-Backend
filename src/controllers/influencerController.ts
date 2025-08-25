@@ -155,7 +155,6 @@ export const createInfluencer = async (
 
     for (const platform of platforms) {
       const platformData = parsedBody[platform];
-      console.log(`[v0] Processing ${platform}:`, platformData);
 
       if (platformData && typeof platformData === "object") {
         const { followers, url, impressions } = platformData;
