@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authenticateToken, requireAdmin } from "../middleware/requireHeader";
 import {
   changePassword,
   createAdmin,
@@ -13,14 +14,19 @@ import {
 
 const router = Router();
 
+// PUBLIC ROUTES (no authentication required)
 router.post("/login", loginUser);
-router.post("/createAdmin", createAdmin);
 router.post("/refresh", refreshToken);
-router.post("/logout", logout);
-router.get("/me", getCurrentUser);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
-router.post("/change-password", changePassword);
 router.post("/verify-email", verifyEmail);
+
+// PROTECTED ROUTES (require authentication)
+router.get("/me", authenticateToken, getCurrentUser);
+router.post("/logout", authenticateToken, logout);
+router.post("/change-password", authenticateToken, changePassword);
+
+// ADMIN ONLY ROUTES (require admin role)
+router.post("/createAdmin", authenticateToken, requireAdmin, createAdmin);
 
 export default router;

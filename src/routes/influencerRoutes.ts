@@ -1,6 +1,12 @@
-import { Router, type Request, type Response, type NextFunction } from "express";
+import {
+  Router,
+  type Request,
+  type Response,
+  type NextFunction,
+} from "express";
 import multer, { type FileFilterCallback } from "multer";
 import type { InfluencerRequest } from "../types/multer";
+import { authenticateToken, requireAdmin } from "../middleware/requireHeader";
 import {
   createInfluencer,
   getInfluencers,
@@ -42,37 +48,57 @@ const uploadAny = upload.any();
 const debugMiddleware = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
-// GET /stats - Get influencer statistics
-router.get("/stats", getInfluencerStats);
 
+// SPECIFIC ROUTES FIRST (before any dynamic /:id routes)
+
+// PROTECTED ROUTES (require authentication)
+// GET /stats - Get influencer statistics
+router.get("/stats", authenticateToken, getInfluencerStats);
+
+// GET /all-influencers - Get all influencers
+router.get("/all-influencers", authenticateToken, getInfluencers);
+
+// ADMIN ONLY ROUTES (require admin role)
 // PUT /bulk/status - Bulk update status
-router.put("/bulk/status", bulkUpdateInfluencerStatus);
+router.put(
+  "/bulk/status",
+  authenticateToken,
+  requireAdmin,
+  bulkUpdateInfluencerStatus
+);
 
 // POST /createInfluencer - Create new influencer
 router.post(
   "/createInfluencer",
+  authenticateToken,
+  requireAdmin,
   debugMiddleware,
   uploadAny,
   createInfluencer
 );
 
-// GET / - Get all influencers
-router.get("/", getInfluencers);
-
-// GET /:id - Get influencer by ID
-router.get("/:id", getInfluencerById);
-
+// DYNAMIC ROUTES WITH PARAMETERS (put these last)
 // PATCH /:id/status - Update influencer status
-router.patch("/:id/status", updateInfluencerStatus);
+router.patch(
+  "/:id/status",
+  authenticateToken,
+  requireAdmin,
+  updateInfluencerStatus
+);
 
 // PUT /:id - Update influencer (with file upload support)
 router.put(
   "/:id",
+  authenticateToken,
+  requireAdmin,
   uploadAny,
   updateInfluencer
 );
 
 // DELETE /:id - Delete influencer
-router.delete("/:id", deleteInfluencer);
+router.delete("/:id", authenticateToken, requireAdmin, deleteInfluencer);
+
+// GET /:id - Get influencer by ID (public profile) - PUT THIS LAST
+router.get("/:id", getInfluencerById);
 
 export default router;
