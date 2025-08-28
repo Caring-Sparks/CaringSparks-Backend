@@ -70,9 +70,6 @@ router.put(
 // POST /createInfluencer - Create new influencer
 router.post(
   "/createInfluencer",
-  authenticateToken,
-  requireAdmin,
-  debugMiddleware,
   uploadAny,
   createInfluencer
 );

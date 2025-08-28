@@ -5,6 +5,7 @@ import connectDB from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import brandRoutes from "./routes/brandRoutes";
 import influencerRoutes from "./routes/influencerRoutes";
+import adminRoutes from "./routes/adminRoutes";
 //ENV config
 dotenv.config();
 
@@ -14,6 +15,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://localhost:3001",
   "https://caring-sparks.vercel.app",
 ];
 
@@ -39,6 +41,7 @@ connectDB();
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/admins", adminRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/influencers", influencerRoutes);
 app.get("/", (_, res) => res.send("API is running 🚀"));

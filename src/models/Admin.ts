@@ -2,8 +2,10 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IAdmin extends Document {
   _id: Types.ObjectId;
+  name: string;
   email: string;
   password: string;
+  phoneNumber: string;
   passwordResetToken: string;
   passwordResetExpires: string;
   isValidated: boolean;
@@ -11,6 +13,10 @@ export interface IAdmin extends Document {
 
 const AdminSchema: Schema<IAdmin> = new Schema(
   {
+    name: {
+      type: String,
+      required: [true, "name is required"],
+    },
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -20,6 +26,10 @@ const AdminSchema: Schema<IAdmin> = new Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: 6,
+    },
+    phoneNumber: {
+      type: String,
+      required: [true, "phone number is required"],
     },
     passwordResetToken: {
       type: String,

@@ -26,7 +26,4 @@ router.get("/me", authenticateToken, getCurrentUser);
 router.post("/logout", authenticateToken, logout);
 router.post("/change-password", authenticateToken, changePassword);
 
-// ADMIN ONLY ROUTES (require admin role)
-router.post("/createAdmin", authenticateToken, requireAdmin, createAdmin);
-
 export default router;
