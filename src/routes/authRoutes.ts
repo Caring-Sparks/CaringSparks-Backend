@@ -23,7 +23,7 @@ router.post("/verify-email", verifyEmail);
 
 // PROTECTED ROUTES (require authentication)
 router.get("/me", authenticateToken, getCurrentUser);
-router.post("/logout", authenticateToken, logout);
+router.post("/logout", logout);
 router.post("/change-password", authenticateToken, changePassword);
 
 export default router;

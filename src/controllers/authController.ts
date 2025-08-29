@@ -357,12 +357,12 @@ export const getCurrentUser = async (req: Request, res: Response) => {
 // Forgot password
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const { email, role } = req.body;
 
-    if (!email) {
+    if (!email || !role) {
       return res.status(400).json({
         success: false,
-        message: "Email is required",
+        message: "Email and role are required",
       });
     }
 
@@ -375,28 +375,24 @@ export const forgotPassword = async (req: Request, res: Response) => {
       });
     }
 
-    const userModels: { model: Model<any>; role: string }[] = [
-      { model: Brand, role: "brand" },
-      { model: Influencer, role: "influencer" },
-      { model: Admin, role: "admin" },
-    ];
+    const userModels: { [key: string]: Model<any> } = {
+      brand: Brand,
+      influencer: Influencer,
+      admin: Admin,
+    };
 
-    let user: any = null;
-    let role = "";
-
-    for (const { model, role: r } of userModels) {
-      const foundUser = await model
-        .findOne({ email: email.toLowerCase() })
-        .exec();
-      if (foundUser) {
-        user = foundUser;
-        role = r;
-        break;
-      }
+    const model = userModels[role];
+    if (!model) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role provided",
+      });
     }
 
+    const user = await model.findOne({ email: email.toLowerCase() }).exec();
+
     if (!user) {
-      // Don't reveal if email exists or not for security
+      // For security, don't reveal if email exists
       return res.status(200).json({
         success: true,
         message:

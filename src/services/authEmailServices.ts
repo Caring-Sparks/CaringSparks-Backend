@@ -1,4 +1,5 @@
-// Email service functions for password reset
+import dotenv from "dotenv";
+dotenv.config();
 
 import nodemailer from "nodemailer";
 
