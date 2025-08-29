@@ -2,7 +2,6 @@ import { Router } from "express";
 import { authenticateToken, requireAdmin } from "../middleware/requireHeader";
 import {
   changePassword,
-  createAdmin,
   forgotPassword,
   getCurrentUser,
   loginUser,
@@ -20,10 +19,10 @@ router.post("/refresh", refreshToken);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 router.post("/verify-email", verifyEmail);
+router.post("/logout", logout);
 
 // PROTECTED ROUTES (require authentication)
 router.get("/me", authenticateToken, getCurrentUser);
-router.post("/logout", logout);
 router.post("/change-password", authenticateToken, changePassword);
 
 export default router;
