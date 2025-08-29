@@ -11,7 +11,7 @@ import {
 const router = Router();
 
 // ADMIN ONLY ROUTES (require admin role)
-router.post("/createAdmin", createAdmin);
+router.post("/createAdmin", authenticateToken, requireAdmin, createAdmin);
 router.get("/all-admins", authenticateToken, requireAdmin, getAllAdmins);
 router.get("/:id", authenticateToken, requireAdmin, getAdminById);
 router.put("/update/:id", authenticateToken, requireAdmin, updateAdmin);
