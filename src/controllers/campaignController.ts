@@ -152,9 +152,20 @@ export const createCampaign = async (
         message: "At least one platform must be selected",
       });
     }
+    
 
     // Rest of your validation logic...
-    const validPlatforms = ["Instagram", "X", "TikTok"];
+    const validPlatforms = [
+      "Instagram",
+      "X",
+      "TikTok",
+      "Youtube",
+      "Facebook",
+      "Linkedin",
+      "Threads",
+      "Discord",
+      "Snapchat",
+    ];
     const invalidPlatforms = platforms.filter(
       (p) => !validPlatforms.includes(p)
     );

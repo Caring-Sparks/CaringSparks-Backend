@@ -48,7 +48,17 @@ export const createBrand = async (req: Request, res: Response) => {
     }
 
     // Platforms validation
-    const validPlatforms = ["Instagram", "X", "TikTok"];
+    const validPlatforms = [
+      "Instagram",
+      "X",
+      "TikTok",
+      "Youtube",
+      "Facebook",
+      "Linkedin",
+      "Threads",
+      "Discord",
+      "Snapchat",
+    ];
     const { platforms } = req.body;
     if (!Array.isArray(platforms) || platforms.length === 0) {
       return res.status(400).json({

@@ -56,7 +56,17 @@ const CampaignSchema: Schema = new Schema(
     platforms: {
       type: [String],
       required: [true, "At least one platform is required"],
-      enum: ["Instagram", "X", "TikTok"],
+      enum: [
+        "Instagram",
+        "X",
+        "TikTok",
+        "Youtube",
+        "Facebook",
+        "Linkedin",
+        "Threads",
+        "Discord",
+        "Snapchat",
+      ],
       validate: {
         validator: function (v: string[]) {
           return v && v.length > 0;
