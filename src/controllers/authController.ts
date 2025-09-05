@@ -11,17 +11,30 @@ import {
   sendPasswordResetConfirmationEmail,
 } from "../services/authEmailServices";
 import { sendOnboardingEmail } from "../services/adminOnboarding";
+const Campaign = require("../models/Campaign");
 
-const generateToken = (id: string, role: string) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET as string, {
-    expiresIn: "1d",
-  });
+export const generateToken = (
+  userId: string,
+  role: string,
+  email: string
+): string => {
+  return jwt.sign(
+    { id: userId, role, email },
+    process.env.JWT_SECRET as string,
+    { expiresIn: "1h" }
+  );
 };
 
-const generateRefreshToken = (id: string, role: string) => {
-  return jwt.sign({ id, role }, process.env.JWT_REFRESH_SECRET as string, {
-    expiresIn: "7d",
-  });
+export const generateRefreshToken = (
+  userId: string,
+  role: string,
+  email: string
+): string => {
+  return jwt.sign(
+    { id: userId, role, email },
+    process.env.JWT_REFRESH_SECRET as string,
+    { expiresIn: "7d" }
+  );
 };
 
 export const loginUser = async (req: Request, res: Response) => {
@@ -99,8 +112,8 @@ export const loginUser = async (req: Request, res: Response) => {
       });
     }
 
-    const token = generateToken(user._id.toString(), role);
-    const refreshToken = generateRefreshToken(user._id.toString(), role);
+    const token = generateToken(user._id.toString(), role, email);
+    const refreshToken = generateRefreshToken(user._id.toString(), role, email);
 
     // Set refresh token as httpOnly cookie
     res.cookie("refreshToken", refreshToken, {
@@ -227,8 +240,12 @@ export const refreshToken = async (req: Request, res: Response) => {
       });
     }
 
-    const newToken = generateToken(user._id.toString(), role);
-    const newRefreshToken = generateRefreshToken(user._id.toString(), role);
+    const newToken = generateToken(user._id.toString(), role, user.email);
+    const newRefreshToken = generateRefreshToken(
+      user._id.toString(),
+      role,
+      user.email
+    );
 
     // Set new refresh token as httpOnly cookie
     res.cookie("refreshToken", newRefreshToken, {
@@ -683,6 +700,252 @@ export const verifyEmail = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Verify email error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error occurred",
+    });
+  }
+};
+
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    const { brandName, email, brandPhone, role } = req.body;
+
+    // Get token from authorization header
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided",
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+
+    // Input validation
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email format",
+        });
+      }
+    }
+
+    // Role validation
+    if (role) {
+      const validRoles = ["Brand", "Business", "Person", "Movie", "Music", "Other"];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid role provided",
+        });
+      }
+    }
+
+    const userModels: { model: Model<any>; role: string }[] = [
+      { model: Brand, role: "brand" },
+      { model: Influencer, role: "influencer" },
+      { model: Admin, role: "admin" },
+    ];
+
+    let user: any = null;
+    let userRole = "";
+
+    // Find user based on token role
+    for (const { model, role: r } of userModels) {
+      if (decoded.role === r) {
+        const foundUser = await model.findById(decoded.id).exec();
+        if (foundUser) {
+          user = foundUser;
+          userRole = r;
+          break;
+        }
+      }
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Check if email is being changed and if it already exists
+    if (email && email.toLowerCase() !== user.email.toLowerCase()) {
+      const existingUser = await user.constructor.findOne({ 
+        email: email.toLowerCase(),
+        _id: { $ne: user._id } 
+      }).exec();
+
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: "Email already exists",
+        });
+      }
+    }
+
+    // Prepare update object - only include fields that are provided
+    const updateData: any = {};
+    
+    if (brandName !== undefined) updateData.brandName = brandName;
+    if (email !== undefined) updateData.email = email.toLowerCase();
+    if (brandPhone !== undefined) updateData.brandPhone = brandPhone;
+    if (role !== undefined) updateData.role = role;
+    
+    // Add updatedAt timestamp
+    updateData.updatedAt = new Date();
+
+    // Update user
+    const updatedUser = await user.constructor.findByIdAndUpdate(
+      user._id,
+      updateData,
+      { new: true, runValidators: true }
+    ).select("-password").exec();
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Failed to update user",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: {
+        user: {
+          ...updatedUser.toObject(),
+          role: userRole,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error("Update profile error:", error);
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Token expired",
+      });
+    }
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: Object.values(error.errors).map((err: any) => err.message),
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Server error occurred",
+    });
+  }
+};
+
+export const deleteAccount = async (req: Request, res: Response) => {
+  try {
+    // Get token from authorization header
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided",
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+
+    const userModels: { model: Model<any>; role: string }[] = [
+      { model: Brand, role: "brand" },
+      { model: Influencer, role: "influencer" },
+      { model: Admin, role: "admin" },
+    ];
+
+    let user: any = null;
+    let userModel: Model<any> | null = null;
+
+    // Find user based on token role
+    for (const { model, role: r } of userModels) {
+      if (decoded.role === r) {
+        const foundUser = await model.findById(decoded.id).exec();
+        if (foundUser) {
+          user = foundUser;
+          userModel = model;
+          break;
+        }
+      }
+    }
+
+    if (!user || !userModel) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // If this is a brand, also delete all their campaigns
+    if (decoded.role === "brand") {
+      // You'll need to import your Campaign model
+      await Campaign.deleteMany({ email: user.email });
+
+      // For now, we'll just note this in the response
+      console.log(`Would delete campaigns for brand: ${user.email}`);
+    }
+
+    // Delete the user account
+    await userModel.findByIdAndDelete(user._id);
+
+    // Clear any cookies if they exist
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Account deleted successfully",
+    });
+  } catch (error: any) {
+    console.error("Delete account error:", error);
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Token expired",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Server error occurred",

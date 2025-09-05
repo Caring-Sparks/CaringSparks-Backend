@@ -5,8 +5,9 @@ import jwt from "jsonwebtoken";
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
+    _id: string;
     email: string;
-    role?: string;
+    role: string;
   };
 }
 
@@ -41,7 +42,15 @@ export const authenticateToken = (
       });
     }
 
-    req.user = decoded as { id: string; email: string; role?: string };
+    const decodedUser = decoded as { id: string; email: string; role?: string };
+
+    req.user = {
+      id: decodedUser.id,
+      _id: decodedUser.id,
+      email: decodedUser.email,
+      role: decodedUser.role || "user",
+    };
+
     next();
   });
 };

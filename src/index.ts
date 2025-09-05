@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes";
 import brandRoutes from "./routes/brandRoutes";
 import influencerRoutes from "./routes/influencerRoutes";
 import adminRoutes from "./routes/adminRoutes";
+import campaignRoutes from "./routes/campaignRoutes";
 //ENV config
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admins", adminRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/influencers", influencerRoutes);
+app.use("/api/campaigns", campaignRoutes);
 app.get("/", (_, res) => res.send("API is running 🚀"));
 
 // Start server

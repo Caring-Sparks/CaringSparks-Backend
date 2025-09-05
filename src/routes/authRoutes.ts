@@ -1,28 +1,34 @@
-import { Router } from "express";
-import { authenticateToken, requireAdmin } from "../middleware/requireHeader";
+// Add this route to your auth routes file (e.g., routes/auth.ts)
+import express from "express";
 import {
-  changePassword,
-  forgotPassword,
-  getCurrentUser,
   loginUser,
-  logout,
+  createAdmin,
   refreshToken,
+  logout,
+  getCurrentUser,
+  forgotPassword,
   resetPassword,
+  changePassword,
   verifyEmail,
+  updateProfile, // Import the new controller method
+  deleteAccount, // Import the delete account method
 } from "../controllers/authController";
 
-const router = Router();
+const router = express.Router();
 
-// PUBLIC ROUTES (no authentication required)
+// Existing routes
 router.post("/login", loginUser);
+router.post("/admin/create", createAdmin);
 router.post("/refresh", refreshToken);
+router.post("/logout", logout);
+router.get("/me", getCurrentUser);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
+router.post("/change-password", changePassword);
 router.post("/verify-email", verifyEmail);
-router.post("/logout", logout);
 
-// PROTECTED ROUTES (require authentication)
-router.get("/me", authenticateToken, getCurrentUser);
-router.post("/change-password", authenticateToken, changePassword);
+// New routes
+router.put("/update-profile", updateProfile);
+router.delete("/delete-account", deleteAccount);
 
 export default router;

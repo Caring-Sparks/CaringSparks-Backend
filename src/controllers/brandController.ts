@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import Brand from "../models/Brand";
+import Campaign from "../models/Campaign";
 import { sendBrandEmail } from "../services/emailService";
 
 export const createBrand = async (req: Request, res: Response) => {
@@ -30,16 +31,15 @@ export const createBrand = async (req: Request, res: Response) => {
       });
     }
 
-    // Email format validation
+    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid email format",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid email format" });
     }
 
-    // Validate influencer range
+    // Influencer range check
     if (influencersMin > influencersMax) {
       return res.status(400).json({
         success: false,
@@ -47,7 +47,7 @@ export const createBrand = async (req: Request, res: Response) => {
       });
     }
 
-    // Validate platforms array
+    // Platforms validation
     const validPlatforms = ["Instagram", "X", "TikTok"];
     const { platforms } = req.body;
     if (!Array.isArray(platforms) || platforms.length === 0) {
@@ -56,7 +56,6 @@ export const createBrand = async (req: Request, res: Response) => {
         message: "At least one platform must be selected",
       });
     }
-
     const invalidPlatforms = platforms.filter(
       (p) => !validPlatforms.includes(p)
     );
@@ -66,9 +65,9 @@ export const createBrand = async (req: Request, res: Response) => {
         message: `Invalid platforms: ${invalidPlatforms.join(", ")}`,
       });
     }
-    const brandName = req.body.brandName;
 
     // Check if brand already exists
+    const brandName = req.body.brandName;
     const existingBrandEmail = await Brand.findOne({
       email: email.toLowerCase(),
     });
@@ -83,23 +82,20 @@ export const createBrand = async (req: Request, res: Response) => {
       });
     }
 
-    // Generate secure password
+    // Generate password
     const plainPassword = crypto
       .randomBytes(12)
       .toString("base64")
       .slice(0, 12);
     const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
-    // Create brand with all form data
+    // --- STEP 1: Create Brand (main model) ---
     const brand = new Brand({
-      // Basic brand info
       role: req.body.role,
       platforms: req.body.platforms,
       brandName: req.body.brandName,
       email: email.toLowerCase(),
       brandPhone: req.body.brandPhone,
-
-      // Campaign requirements
       influencersMin: Number(req.body.influencersMin),
       influencersMax: Number(req.body.influencersMax),
       followersRange: req.body.followersRange || "",
@@ -107,16 +103,12 @@ export const createBrand = async (req: Request, res: Response) => {
       additionalLocations: req.body.additionalLocations || [],
       postFrequency: req.body.postFrequency || "",
       postDuration: req.body.postDuration || "",
-
-      // Calculated pricing fields from frontend
       avgInfluencers: req.body.avgInfluencers,
       postCount: req.body.postCount,
       costPerInfluencerPerPost: req.body.costPerInfluencerPerPost,
       totalBaseCost: req.body.totalBaseCost,
       platformFee: req.body.platformFee,
       totalCost: req.body.totalCost,
-
-      // System fields
       password: hashedPassword,
       hasPaid: false,
       isValidated: false,
@@ -124,12 +116,37 @@ export const createBrand = async (req: Request, res: Response) => {
 
     await brand.save();
 
-    // Send welcome email with login credentials
+    // --- STEP 2: Save into Campaign collection with SAME _id ---
+    const campaign = new Campaign({
+      role: brand.role,
+      platforms: brand.platforms,
+      brandName: brand.brandName,
+      email: brand.email,
+      brandPhone: brand.brandPhone,
+      influencersMin: brand.influencersMin,
+      influencersMax: brand.influencersMax,
+      followersRange: brand.followersRange,
+      location: brand.location,
+      additionalLocations: brand.additionalLocations,
+      postFrequency: brand.postFrequency,
+      postDuration: brand.postDuration,
+      avgInfluencers: brand.avgInfluencers,
+      postCount: brand.postCount,
+      costPerInfluencerPerPost: brand.costPerInfluencerPerPost,
+      totalBaseCost: brand.totalBaseCost,
+      platformFee: brand.platformFee,
+      totalCost: brand.totalCost,
+      hasPaid: brand.hasPaid,
+      isValidated: brand.isValidated,
+    });
+
+    await campaign.save();
+
+    // --- STEP 3: Send Email ---
     await sendBrandEmail(email, plainPassword, brandName);
 
-    // Return response without sensitive data
+    // Response
     const { password, ...brandData } = brand.toObject();
-
     res.status(201).json({
       success: true,
       message: "Brand registered successfully. Login details sent to email.",
@@ -138,7 +155,6 @@ export const createBrand = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Brand registration error:", error);
 
-    // Handle specific MongoDB errors
     if (error.name === "ValidationError") {
       return res.status(400).json({
         success: false,
