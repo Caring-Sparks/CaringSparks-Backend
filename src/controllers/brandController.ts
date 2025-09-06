@@ -126,8 +126,8 @@ export const createBrand = async (req: Request, res: Response) => {
 
     await brand.save();
 
-    // --- STEP 2: Save into Campaign collection with SAME _id ---
     const campaign = new Campaign({
+      userId: brand._id,
       role: brand.role,
       platforms: brand.platforms,
       brandName: brand.brandName,

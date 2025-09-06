@@ -11,7 +11,7 @@ import {
   sendPasswordResetConfirmationEmail,
 } from "../services/authEmailServices";
 import { sendOnboardingEmail } from "../services/adminOnboarding";
-const Campaign = require("../models/Campaign");
+import Campaign from "../models/Campaign";
 
 export const generateToken = (
   userId: string,
@@ -737,7 +737,14 @@ export const updateProfile = async (req: Request, res: Response) => {
 
     // Role validation
     if (role) {
-      const validRoles = ["Brand", "Business", "Person", "Movie", "Music", "Other"];
+      const validRoles = [
+        "Brand",
+        "Business",
+        "Person",
+        "Movie",
+        "Music",
+        "Other",
+      ];
       if (!validRoles.includes(role)) {
         return res.status(400).json({
           success: false,
@@ -774,12 +781,17 @@ export const updateProfile = async (req: Request, res: Response) => {
       });
     }
 
+    // Store old email for campaign update
+    const oldEmail = user.email;
+
     // Check if email is being changed and if it already exists
     if (email && email.toLowerCase() !== user.email.toLowerCase()) {
-      const existingUser = await user.constructor.findOne({ 
-        email: email.toLowerCase(),
-        _id: { $ne: user._id } 
-      }).exec();
+      const existingUser = await user.constructor
+        .findOne({
+          email: email.toLowerCase(),
+          _id: { $ne: user._id },
+        })
+        .exec();
 
       if (existingUser) {
         return res.status(409).json({
@@ -791,27 +803,83 @@ export const updateProfile = async (req: Request, res: Response) => {
 
     // Prepare update object - only include fields that are provided
     const updateData: any = {};
-    
+
     if (brandName !== undefined) updateData.brandName = brandName;
     if (email !== undefined) updateData.email = email.toLowerCase();
     if (brandPhone !== undefined) updateData.brandPhone = brandPhone;
     if (role !== undefined) updateData.role = role;
-    
+
     // Add updatedAt timestamp
     updateData.updatedAt = new Date();
 
     // Update user
-    const updatedUser = await user.constructor.findByIdAndUpdate(
-      user._id,
-      updateData,
-      { new: true, runValidators: true }
-    ).select("-password").exec();
+    const updatedUser = await user.constructor
+      .findByIdAndUpdate(user._id, updateData, {
+        new: true,
+        runValidators: true,
+      })
+      .select("-password")
+      .exec();
 
     if (!updatedUser) {
       return res.status(404).json({
         success: false,
         message: "Failed to update user",
       });
+    }
+
+    if (email && email.toLowerCase() !== oldEmail.toLowerCase()) {
+      try {
+        // Use userId instead of email for more reliable updates
+        const campaignUpdateResult = await Campaign.updateMany(
+          { userId: user._id },
+          {
+            email: email.toLowerCase(),
+            updatedAt: new Date(),
+          }
+        );
+      } catch (campaignError) {
+        console.error(
+          "Error updating campaigns with new email:",
+          campaignError
+        );
+      }
+    }
+
+    // UPDATE CAMPAIGNS COLLECTION IF BRAND NAME CHANGED
+    if (brandName !== undefined && userRole === "brand") {
+      try {
+        const campaignUpdateResult = await Campaign.updateMany(
+          { userId: user._id },
+          {
+            brandName: brandName,
+            updatedAt: new Date(),
+          }
+        );
+      } catch (campaignError) {
+        console.error(
+          "Error updating campaigns with new brand name:",
+          campaignError
+        );
+      }
+    }
+
+    // UPDATE CAMPAIGNS COLLECTION IF BRAND PHONE CHANGED
+    if (brandPhone !== undefined && userRole === "brand") {
+      try {
+        const campaignUpdateResult = await Campaign.updateMany(
+          { userId: user._id },
+          {
+            brandPhone: brandPhone,
+            updatedAt: new Date(),
+          }
+        );
+      } catch (campaignError) {
+        console.error(
+          "Error updating campaigns with new brand phone:",
+          campaignError
+        );
+      }
     }
 
     res.status(200).json({

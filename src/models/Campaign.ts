@@ -1,4 +1,4 @@
-// Fixed Campaign Model
+// Updated Campaign Model with payment details
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface ICampaign extends Document {
@@ -9,7 +9,7 @@ export interface ICampaign extends Document {
   role: string;
   platforms: string[];
   brandName: string;
-  email: string; // This will come from authenticated user
+  email: string;
   brandPhone: string;
 
   // Campaign requirements
@@ -21,7 +21,7 @@ export interface ICampaign extends Document {
   postFrequency?: string;
   postDuration?: string;
 
-  // Calculated pricing fields (from frontend calculations)
+  // Calculated pricing fields
   avgInfluencers?: number;
   postCount?: number;
   costPerInfluencerPerPost?: number;
@@ -29,9 +29,26 @@ export interface ICampaign extends Document {
   platformFee?: number;
   totalCost?: number;
 
-  // System fields
+  // Payment fields
   hasPaid: boolean;
+  paymentReference?: string;
+  paymentDate?: string;
+
+  // Detailed payment information (new)
+  paymentDetails?: {
+    flutterwaveTransactionId?: number;
+    amount?: number;
+    currency?: string;
+    customerEmail?: string;
+    paymentMethod?: string;
+    processorResponse?: string;
+    chargedAmount?: number;
+    completedAt?: Date;
+  };
+
+  // System fields
   isValidated: boolean;
+  status: string;
 
   // Timestamps
   createdAt: Date;
@@ -40,10 +57,10 @@ export interface ICampaign extends Document {
 
 const CampaignSchema: Schema = new Schema(
   {
-    // User reference - link campaign to user who created it
+    // User reference
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Adjust this to match your User model name
+      ref: "User",
       required: [true, "User ID is required"],
     },
 
@@ -141,7 +158,7 @@ const CampaignSchema: Schema = new Schema(
       default: "",
     },
 
-    // Calculated pricing fields (from frontend)
+    // Calculated pricing fields
     avgInfluencers: {
       type: Number,
       min: [0, "Average influencers cannot be negative"],
@@ -173,14 +190,59 @@ const CampaignSchema: Schema = new Schema(
       default: 0,
     },
 
-    // System fields
+    // Payment fields
     hasPaid: {
       type: Boolean,
       default: false,
     },
+    paymentReference: {
+      type: String,
+    },
+    paymentDate: {
+      type: String,
+    },
+
+    // Detailed payment information (new)
+    paymentDetails: {
+      flutterwaveTransactionId: {
+        type: Number,
+      },
+      amount: {
+        type: Number,
+        min: [0, "Amount cannot be negative"],
+      },
+      currency: {
+        type: String,
+        uppercase: true,
+      },
+      customerEmail: {
+        type: String,
+        lowercase: true,
+      },
+      paymentMethod: {
+        type: String,
+      },
+      processorResponse: {
+        type: String,
+      },
+      chargedAmount: {
+        type: Number,
+        min: [0, "Charged amount cannot be negative"],
+      },
+      completedAt: {
+        type: Date,
+      },
+    },
+
+    // System fields
     isValidated: {
       type: Boolean,
       default: false,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
     },
   },
   {
@@ -192,8 +254,7 @@ const CampaignSchema: Schema = new Schema(
 CampaignSchema.index({ userId: 1 });
 CampaignSchema.index({ email: 1 });
 CampaignSchema.index({ createdAt: -1 });
-
-// Optional: Prevent duplicate campaign names per user
-// CampaignSchema.index({ userId: 1, brandName: 1 }, { unique: true });
+CampaignSchema.index({ hasPaid: 1 });
+CampaignSchema.index({ paymentReference: 1 });
 
 export default mongoose.model<ICampaign>("Campaign", CampaignSchema);
