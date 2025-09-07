@@ -1,4 +1,4 @@
-// Updated Campaign Model with payment details
+// Updated Campaign Model with payment details and assigned influencers
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface ICampaign extends Document {
@@ -21,6 +21,9 @@ export interface ICampaign extends Document {
   postFrequency?: string;
   postDuration?: string;
 
+  // Assigned influencers (new field)
+  assignedInfluencers?: mongoose.Types.ObjectId[];
+
   // Calculated pricing fields
   avgInfluencers?: number;
   postCount?: number;
@@ -34,7 +37,7 @@ export interface ICampaign extends Document {
   paymentReference?: string;
   paymentDate?: string;
 
-  // Detailed payment information (new)
+  // Detailed payment information
   paymentDetails?: {
     flutterwaveTransactionId?: number;
     amount?: number;
@@ -158,6 +161,13 @@ const CampaignSchema: Schema = new Schema(
       default: "",
     },
 
+    // Assigned influencers (new field)
+    assignedInfluencers: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "Influencer",
+      default: [],
+    },
+
     // Calculated pricing fields
     avgInfluencers: {
       type: Number,
@@ -202,7 +212,7 @@ const CampaignSchema: Schema = new Schema(
       type: String,
     },
 
-    // Detailed payment information (new)
+    // Detailed payment information
     paymentDetails: {
       flutterwaveTransactionId: {
         type: Number,
@@ -256,5 +266,6 @@ CampaignSchema.index({ email: 1 });
 CampaignSchema.index({ createdAt: -1 });
 CampaignSchema.index({ hasPaid: 1 });
 CampaignSchema.index({ paymentReference: 1 });
+CampaignSchema.index({ assignedInfluencers: 1 }); // New index
 
 export default mongoose.model<ICampaign>("Campaign", CampaignSchema);

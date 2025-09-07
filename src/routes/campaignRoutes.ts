@@ -7,6 +7,7 @@ import {
   updateCampaign,
   updatePaymentStatus,
   deleteCampaign,
+  assignInfluencersToCampaign,
 } from "../controllers/campaignController";
 
 const router = Router();
@@ -32,6 +33,8 @@ router.get("/email/:email", getCampaignsByEmail);
 
 // Update campaign by ID
 router.put("/:id", updateCampaign);
+
+router.post("/assign", assignInfluencersToCampaign);
 
 // Update payment status (dedicated endpoint)
 router.put("/:id/payment", updatePaymentStatus);

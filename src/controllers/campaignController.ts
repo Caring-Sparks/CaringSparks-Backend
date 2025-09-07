@@ -152,7 +152,6 @@ export const createCampaign = async (
         message: "At least one platform must be selected",
       });
     }
-    
 
     // Rest of your validation logic...
     const validPlatforms = [
@@ -612,6 +611,104 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
       message: `Payment status updated to ${hasPaid ? "paid" : "unpaid"}`,
     });
   } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
+  }
+};
+
+export const assignInfluencersToCampaign = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+    const { influencerIds } = req.body;
+
+    // Validate campaign ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid campaign ID format",
+      });
+    }
+
+    // Validate influencer IDs
+    if (!Array.isArray(influencerIds) || influencerIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Influencer IDs must be a non-empty array",
+      });
+    }
+
+    // Validate each influencer ID format
+    for (const influencerId of influencerIds) {
+      if (!mongoose.Types.ObjectId.isValid(influencerId)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid influencer ID format: ${influencerId}`,
+        });
+      }
+    }
+
+    // Get the campaign
+    const campaign = await Campaign.findById(id);
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        message: "Campaign not found",
+      });
+    }
+
+    // Remove duplicates from input
+    const uniqueInfluencerIds = [...new Set(influencerIds)];
+
+    // Check against campaign limits
+    if (uniqueInfluencerIds.length > campaign.influencersMax) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot assign more than ${campaign.influencersMax} influencers to this campaign`,
+      });
+    }
+
+    if (uniqueInfluencerIds.length < campaign.influencersMin) {
+      return res.status(400).json({
+        success: false,
+        message: `Must assign at least ${campaign.influencersMin} influencers to this campaign`,
+      });
+    }
+
+    // TODO: Validate that the influencers exist in your Influencer collection
+    // const existingInfluencers = await Influencer.find({ _id: { $in: uniqueInfluencerIds } });
+    // if (existingInfluencers.length !== uniqueInfluencerIds.length) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Some influencer IDs do not exist",
+    //   });
+    // }
+
+    // Update the campaign with assigned influencers
+    const updatedCampaign = await Campaign.findByIdAndUpdate(
+      id,
+      {
+        assignedInfluencers: uniqueInfluencerIds,
+        // You might want to update the status when influencers are assigned
+        // status: "in-progress" // or whatever status makes sense
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).populate("assignedInfluencers", "name email phone location");
+
+    res.status(200).json({
+      success: true,
+      data: updatedCampaign,
+      message: `${uniqueInfluencerIds.length} influencers assigned successfully`,
+    });
+  } catch (error) {
+    console.error("Assign influencers error:", error);
     res.status(500).json({
       success: false,
       message: (error as Error).message,
