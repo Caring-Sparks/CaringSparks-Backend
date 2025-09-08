@@ -34,7 +34,7 @@ router.get("/email/:email", getCampaignsByEmail);
 // Update campaign by ID
 router.put("/:id", updateCampaign);
 
-router.post("/assign", assignInfluencersToCampaign);
+router.post("/:id/assign", assignInfluencersToCampaign);
 
 // Update payment status (dedicated endpoint)
 router.put("/:id/payment", updatePaymentStatus);
