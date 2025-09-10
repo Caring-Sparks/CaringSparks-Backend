@@ -7,6 +7,7 @@ import Influencer from "../models/Influencer";
 import {
   sendInfluencerWelcomeEmail,
   sendAdminNotificationEmail,
+  sendInfluencerStatusEmail,
 } from "../services/influencerEmailService";
 
 export const createInfluencer = async (
@@ -821,6 +822,19 @@ export const updateInfluencerStatus = async (req: Request, res: Response) => {
         error: "Influencer not found",
       });
       return;
+    }
+
+    // Send email notification for approved or rejected status
+    if (status === "approved" || status === "rejected") {
+      try {
+        await sendInfluencerStatusEmail(
+          influencer.email,
+          influencer.name,
+          status
+        );
+      } catch (emailError) {
+        console.error("Failed to send status email:", emailError);
+      }
     }
 
     res.json({

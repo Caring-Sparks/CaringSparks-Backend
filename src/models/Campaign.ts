@@ -147,12 +147,6 @@ const CampaignSchema: Schema = new Schema(
     },
     postFrequency: {
       type: String,
-      enum: [
-        "",
-        "5 times per week for 3 weeks = 15 posts in total",
-        "3 times per week for 4 weeks = 12 posts in total",
-        "2 times per week for 6 weeks = 12 posts in total",
-      ],
       default: "",
     },
     postDuration: {

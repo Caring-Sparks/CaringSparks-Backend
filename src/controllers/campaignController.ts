@@ -2,6 +2,10 @@ import { Request, Response } from "express";
 import Campaign from "../models/Campaign";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken"; // Add this import!
+import {
+  sendCampaignEmails,
+  sendCampaignStatusEmail,
+} from "../services/emailService";
 
 // Interface to extend Request with user data
 interface AuthenticatedRequest extends Request {
@@ -227,12 +231,35 @@ export const createCampaign = async (
     // Create and save campaign
     const campaign = new Campaign(campaignData);
     const savedCampaign = await campaign.save();
+    try {
+      const emailResults = await sendCampaignEmails(
+        campaignData,
+        savedCampaign
+      );
 
-    res.status(201).json({
-      success: true,
-      data: savedCampaign,
-      message: "Campaign created successfully",
-    });
+      res.status(201).json({
+        success: true,
+        data: savedCampaign,
+        message: "Campaign created successfully",
+        emailStatus: {
+          adminNotified: emailResults.adminEmailSent,
+          brandNotified: emailResults.brandEmailSent,
+        },
+      });
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+
+      res.status(201).json({
+        success: true,
+        data: savedCampaign,
+        message:
+          "Campaign created successfully, but email notifications failed",
+        emailError:
+          process.env.NODE_ENV === "development"
+            ? (emailError as Error).message
+            : "Email service temporarily unavailable",
+      });
+    }
   } catch (error: any) {
     console.error("Campaign creation error:", error);
 
@@ -471,16 +498,39 @@ export const updateCampaign = async (req: Request, res: Response) => {
       }
     }
 
+    // Get the old campaign data to compare status changes
+    const oldCampaign = await Campaign.findById(id);
+
+    if (!oldCampaign) {
+      return res.status(404).json({
+        success: false,
+        message: "Campaign not found",
+      });
+    }
+
     const campaign = await Campaign.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
     });
 
-    if (!campaign) {
-      return res.status(404).json({
-        success: false,
-        message: "Campaign not found",
-      });
+    // Check if status changed to approved or rejected and send email
+    if (
+      req.body.status &&
+      req.body.status !== oldCampaign.status &&
+      (req.body.status === "approved" || req.body.status === "rejected")
+    ) {
+      try {
+        await sendCampaignStatusEmail(
+          campaign?.email,
+          campaign?.brandName,
+          req.body.status,
+          campaign?.totalCost,
+          campaign?.postDuration
+        );
+      } catch (emailError) {
+        console.error("Failed to send campaign status email:", emailError);
+        // Don't fail the request if email fails, but log it
+      }
     }
 
     res.status(200).json({ success: true, data: campaign });

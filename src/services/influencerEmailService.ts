@@ -1356,3 +1356,390 @@ export const sendAdminNotificationEmail = async (influencer: IInfluencer) => {
 
   await transporter.sendMail(mailOptions);
 };
+
+export const sendInfluencerStatusEmail = async (
+  to: string,
+  influencerName: string,
+  status: "approved" | "rejected",
+  rejectionReason?: string
+) => {
+  const companyName = "CaringSparks";
+  const loginUrl = "https://caring-sparks.vercel.app/";
+  const supportEmail = "support@caringsparks.com";
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  // Determine email content based on status
+  const isApproved = status === "approved";
+  const statusEmoji = isApproved ? "🎉" : "📋";
+  const statusColor = isApproved ? "#10b981" : "#f59e0b";
+  const statusBackground = isApproved ? "#d1fae5" : "#fef3c7";
+  const statusBorder = isApproved ? "#10b981" : "#f59e0b";
+  const headerGradient = isApproved
+    ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
+    : "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+
+  const subject = isApproved
+    ? `🎉 Welcome to CaringSparks, ${influencerName}! Your Application is Approved`
+    : `📋 Update on Your CaringSparks Application`;
+
+  const mainMessage = isApproved
+    ? `Congratulations <strong>${influencerName}</strong>! Your influencer application has been approved. 
+       We're excited to welcome you to our platform and can't wait to see the amazing campaigns you'll create with our brand partners.`
+    : `Thank you for your interest in joining CaringSparks, <strong>${influencerName}</strong>. 
+       After careful review, we're unable to approve your application at this time.`;
+
+  const influencerMailOptions = {
+    from: `"CaringSparks Team" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    /* Reset styles */
+    body, table, td, p, a, li, blockquote {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    table, td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+    }
+    img {
+      -ms-interpolation-mode: bicubic;
+      border: 0;
+      height: auto;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+    }
+
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: #f1f5f9;
+      font-family: 'Source Sans Pro', Arial, sans-serif;
+      line-height: 1.6;
+      color: #475569;
+    }
+
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      width: 100%;
+    }
+
+    .header {
+      background: ${headerGradient};
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: ${statusColor};
+    }
+
+    .welcome-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .content {
+      padding: 30px 20px;
+    }
+
+    .intro-text {
+      font-size: 16px;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 25px;
+      line-height: 1.7;
+    }
+
+    .status-card {
+      background-color: ${statusBackground};
+      border: 2px solid ${statusBorder};
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    .status-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: ${statusColor};
+      margin-bottom: 15px;
+    }
+
+    .status-message {
+      color: #374151;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .next-steps {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+
+    .next-steps h3 {
+      color: #374151;
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .steps-list {
+      color: #475569;
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .steps-list li {
+      margin-bottom: 8px;
+    }
+
+    .rejection-note {
+      background-color: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 16px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .rejection-note p {
+      margin: 0;
+      color: #b91c1c;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .cta-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: ${headerGradient};
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      box-shadow: 0 4px 12px rgba(${
+        isApproved ? "16, 185, 129" : "245, 158, 11"
+      }, 0.3);
+      margin: 0 10px 10px 0;
+    }
+
+    .cta-button-secondary {
+      display: inline-block;
+      background: #ffffff;
+      color: ${statusColor} !important;
+      text-decoration: none;
+      padding: 14px 28px;
+      border: 2px solid ${statusColor};
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      margin: 0 10px 10px 0;
+    }
+
+    .footer {
+      background-color: #f8fafc;
+      padding: 20px 15px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .footer-text {
+      color: #64748b;
+      font-size: 13px;
+      margin: 0 0 10px 0;
+    }
+
+    .footer-links {
+      margin: 10px 0;
+    }
+
+    .footer-links a {
+      color: ${statusColor};
+      text-decoration: none;
+      margin: 0 10px;
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+
+    /* Mobile responsiveness */
+    @media only screen and (max-width: 600px) {
+      .welcome-title {
+        font-size: 22px !important;
+      }
+      .intro-text {
+        font-size: 15px !important;
+      }
+      .cta-button, .cta-button-secondary {
+        display: block !important;
+        width: calc(100% - 40px) !important;
+        margin: 10px 0 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">${statusEmoji}</div>
+      <h1 class="welcome-title">${
+        isApproved ? "Welcome to CaringSparks!" : "Application Update"
+      }</h1>
+    </div>
+    
+    <!-- Content -->
+    <div class="content">
+      <p class="intro-text">
+        ${mainMessage}
+      </p>
+      
+      <!-- Status Card -->
+      <div class="status-card">
+        <h2 class="status-title">
+          ${
+            isApproved
+              ? "🎊 Application Approved!"
+              : "📋 Application Status Update"
+          }
+        </h2>
+        <div class="status-message">
+          ${
+            isApproved
+              ? `You're now part of the CaringSparks influencer community! Your profile is live and brands can start connecting with you for exciting collaboration opportunities.`
+              : `We appreciate the time you took to apply. While we can't move forward with your application right now, we encourage you to keep building your online presence.`
+          }
+        </div>
+      </div>
+      
+      <!-- Next Steps -->
+      <div class="next-steps">
+        <h3>${isApproved ? "🚀 What's Next?" : "💡 Moving Forward"}</h3>
+        ${
+          isApproved
+            ? `
+        <ul class="steps-list">
+          <li>Set your collaboration preferences</li>
+          <li>Browse assigned campaigns from top brands</li>
+          <li>Accept or reject campaign assignments</li>
+          <li>Build relationships with brand partners</li>
+        </ul>
+        `
+            : `
+        <ul class="steps-list">
+          <li>Continue creating engaging content in your niche</li>
+          <li>Focus on growing your audience authentically</li>
+          <li>Improve your content quality and consistency</li>
+          <li>You're welcome to reapply in the future as your profile grows</li>
+        </ul>
+        `
+        }
+      </div>
+      
+      <!-- Call to Action -->
+      <div class="cta-container">
+        ${
+          isApproved
+            ? `
+        <a href="${loginUrl}" class="cta-button">
+          Access Your Dashboard
+        </a>
+        <a href="mailto:${supportEmail}" class="cta-button-secondary">
+          Get Support
+        </a>
+        `
+            : `
+        <a href="mailto:${supportEmail}" class="cta-button">
+          Contact Support
+        </a>
+        <a href="${loginUrl}" class="cta-button-secondary">
+          Visit Our Platform
+        </a>
+        `
+        }
+      </div>
+      
+      <p style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
+        ${
+          isApproved
+            ? "We're here to support your success. Reach out anytime if you need help!"
+            : "Thank you for your interest in CaringSparks. We wish you all the best!"
+        }
+      </p>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <p class="footer-text">
+        This email was sent to ${to} regarding your influencer application on CaringSparks.
+      </p>
+      
+      <div class="footer-links">
+        <a href="${loginUrl}">Platform</a>
+        <a href="mailto:${supportEmail}">Support</a>
+        <a href="https://caring-sparks.vercel.app/">Privacy Policy</a>
+      </div>
+      
+      <p class="footer-text">
+        © ${new Date().getFullYear()} CaringSparks. All rights reserved.  
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+  };
+
+  try {
+    // Send both emails
+    await Promise.all([transporter.sendMail(influencerMailOptions)]);
+
+    console.log(
+      `${status} email sent successfully to ${influencerName} (${to})`
+    );
+  } catch (error) {
+    console.error("Error sending influencer status emails:", error);
+    throw error;
+  }
+};
