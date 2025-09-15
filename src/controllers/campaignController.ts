@@ -1,11 +1,15 @@
 import { Request, Response } from "express";
 import Campaign from "../models/Campaign";
 import mongoose from "mongoose";
-import jwt from "jsonwebtoken"; // Add this import!
+import jwt from "jsonwebtoken";
 import {
   sendCampaignEmails,
   sendCampaignStatusEmail,
 } from "../services/emailService";
+import {
+  sendPaymentConfirmationEmail,
+  sendInfluencersAssignedEmail,
+} from "../services/campaignEmailServices";
 
 // Interface to extend Request with user data
 interface AuthenticatedRequest extends Request {
@@ -15,6 +19,15 @@ interface AuthenticatedRequest extends Request {
     [key: string]: any;
   };
 }
+
+// Helper function to convert Mongoose document to plain object with proper typing
+const convertCampaignForEmail = (campaignDoc: any) => {
+  const campaign = campaignDoc.toObject ? campaignDoc.toObject() : campaignDoc;
+  return {
+    ...campaign,
+    _id: campaign._id.toString(), // Ensure _id is a string
+  };
+};
 
 // Create a new campaign
 export const createCampaign = async (
@@ -228,13 +241,18 @@ export const createCampaign = async (
       hasPaid: Boolean(hasPaid) || false,
       isValidated: Boolean(isValidated) || false,
     };
+
     // Create and save campaign
     const campaign = new Campaign(campaignData);
     const savedCampaign = await campaign.save();
+
     try {
+      // Convert campaign document for email service
+      const campaignForEmail = convertCampaignForEmail(savedCampaign);
+
       const emailResults = await sendCampaignEmails(
         campaignData,
-        savedCampaign
+        campaignForEmail
       );
 
       res.status(201).json({
@@ -622,7 +640,6 @@ export const getCampaignsByEmail = async (req: Request, res: Response) => {
   }
 };
 
-// Update payment status
 export const updatePaymentStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -653,6 +670,23 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
         success: false,
         message: "Campaign not found",
       });
+    }
+
+    // Send payment confirmation email if payment is marked as paid
+    if (hasPaid && campaign.email && campaign.brandName) {
+      try {
+        // Convert campaign document for email service
+        const campaignForEmail = convertCampaignForEmail(campaign);
+
+        await sendPaymentConfirmationEmail(
+          campaign.email,
+          campaign.brandName,
+          campaignForEmail
+        );
+      } catch (emailError) {
+        console.error("Failed to send payment confirmation email:", emailError);
+        // Don't fail the request if email fails, but log it
+      }
     }
 
     res.status(200).json({
@@ -751,6 +785,23 @@ export const assignInfluencersToCampaign = async (
         runValidators: true,
       }
     ).populate("assignedInfluencers", "name email phone location");
+
+    // Send email notification to brand about assigned influencers
+    try {
+      if (updatedCampaign && updatedCampaign.assignedInfluencers) {
+        const campaignForEmail = convertCampaignForEmail(updatedCampaign);
+
+        await sendInfluencersAssignedEmail(
+          updatedCampaign.email,
+          updatedCampaign.brandName,
+          campaignForEmail,
+          updatedCampaign.assignedInfluencers as any
+        );
+      }
+    } catch (emailError) {
+      console.error("Failed to send influencers assigned email:", emailError);
+      // Don't fail the request if email fails, but log it
+    }
 
     res.status(200).json({
       success: true,

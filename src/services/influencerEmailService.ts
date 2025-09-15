@@ -1527,6 +1527,31 @@ export const sendInfluencerStatusEmail = async (
       margin-bottom: 8px;
     }
 
+    .payment-info {
+      background-color: #eff6ff;
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .payment-info h3 {
+      color: #1d4ed8;
+      margin-top: 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .payment-info p {
+      color: #1e40af;
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 0;
+    }
+
     .rejection-note {
       background-color: #fef2f2;
       border-left: 4px solid #ef4444;
@@ -1653,6 +1678,20 @@ export const sendInfluencerStatusEmail = async (
         </div>
       </div>
       
+      ${
+        isApproved
+          ? `
+      <!-- Payment Information -->
+      <div class="payment-info">
+        <h3>💳 Payment Setup</h3>
+        <p>
+          <strong>Important:</strong> You can now login to your dashboard and add your payment account details. This ensures you'll receive your earnings promptly once the campaign is completed and approved.
+        </p>
+      </div>
+      `
+          : ""
+      }
+      
       <!-- Next Steps -->
       <div class="next-steps">
         <h3>${isApproved ? "🚀 What's Next?" : "💡 Moving Forward"}</h3>
@@ -1660,9 +1699,9 @@ export const sendInfluencerStatusEmail = async (
           isApproved
             ? `
         <ul class="steps-list">
-          <li>Set your collaboration preferences</li>
-          <li>Browse assigned campaigns from top brands</li>
           <li>Accept or reject campaign assignments</li>
+          <li>Complete your first campaign job</li>
+          <li><strong>Add your payment details</strong></li>
           <li>Build relationships with brand partners</li>
         </ul>
         `
