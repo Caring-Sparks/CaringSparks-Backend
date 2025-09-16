@@ -449,7 +449,8 @@ export const sendCampaignStatusEmail = async (
   brandName: any,
   status: "approved" | "rejected",
   campaignBudget?: any,
-  campaignDuration?: any
+  campaignDuration?: any,
+  hasPaid?: boolean
 ) => {
   const companyName = "CaringSparks";
   const loginUrl = "https://caring-sparks.vercel.app/";
@@ -463,8 +464,9 @@ export const sendCampaignStatusEmail = async (
     },
   });
 
-  // Determine email content based on status
+  // Determine email content based on status and payment
   const isApproved = status === "approved";
+  const isPaidAndApproved = isApproved && hasPaid;
   const statusEmoji = isApproved ? "🎉" : "📋";
   const statusColor = isApproved ? "#10b981" : "#ef4444";
   const statusBackground = isApproved ? "#d1fae5" : "#fee2e2";
@@ -474,13 +476,18 @@ export const sendCampaignStatusEmail = async (
     : "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
 
   const subject = isApproved
-    ? `🎉 Campaign Approved: "${brandName}" - Payment Required`
+    ? isPaidAndApproved
+      ? `🚀 Campaign Live: "${brandName}" - Influencers Being Matched`
+      : `🎉 Campaign Approved: "${brandName}" - Payment Required`
     : `📋 Campaign Update: "${brandName}" Status`;
 
   const mainMessage = isApproved
-    ? `Great news, Your campaign for"<strong>${brandName}</strong>" has been approved and is ready to go live. 
-       To activate your campaign and start connecting with influencers, please complete your payment within the next 5 days.`
-    : `Thank you for submitting your campaign "<strong>${brandName}</strong>", <strong>${brandName}</strong>. 
+    ? isPaidAndApproved
+      ? `Fantastic news! Your campaign "<strong>${brandName}</strong>" has been approved and is now live. 
+         Our system is actively matching you with relevant influencers who align with your campaign goals.`
+      : `Great news! Your campaign "<strong>${brandName}</strong>" has been approved and is ready to go live. 
+         To activate your campaign and start connecting with influencers, please complete your payment within the next 5 days.`
+    : `Thank you for submitting your campaign "<strong>${brandName}</strong>". 
        After careful review, we're unable to approve your campaign in its current form.`;
 
   const paymentDeadline = new Date();
@@ -622,6 +629,37 @@ export const sendCampaignStatusEmail = async (
       font-size: 16px;
       text-align: center;
       margin: 10px 0;
+    }
+
+    .live-campaign-box {
+      background-color: #ecfdf5;
+      border: 2px solid #10b981;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 25px 0;
+      text-align: center;
+    }
+
+    .live-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #059669;
+      margin-bottom: 10px;
+    }
+
+    .matching-status {
+      background-color: #ffffff;
+      padding: 15px 20px;
+      border-radius: 8px;
+      display: inline-block;
+      margin: 10px 0;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+    }
+
+    .matching-text {
+      color: #059669;
+      font-weight: 600;
+      margin: 0;
     }
 
     .payment-deadline {
@@ -795,7 +833,11 @@ export const sendCampaignStatusEmail = async (
     <div class="header">
       <div class="logo">${statusEmoji}</div>
       <h1 class="welcome-title">${
-        isApproved ? "Campaign Approved!" : "Campaign Update"
+        isApproved
+          ? isPaidAndApproved
+            ? "Campaign is Live!"
+            : "Campaign Approved!"
+          : "Campaign Update"
       }</h1>
     </div>
     
@@ -815,7 +857,7 @@ export const sendCampaignStatusEmail = async (
             ? `
         <div class="detail-row">
           <span class="detail-label">Budget:</span>
-<span class="detail-value">₦${campaignBudget?.toLocaleString()}</span>
+          <span class="detail-value">₦${campaignBudget?.toLocaleString()}</span>
         </div>
         `
             : ""
@@ -834,12 +876,39 @@ export const sendCampaignStatusEmail = async (
         
         <div class="detail-row">
           <span class="detail-label">Status:</span>
-          <span class="detail-value" style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${status}</span>
+          <span class="detail-value" style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">
+            ${isPaidAndApproved ? "Live" : status}
+          </span>
         </div>
+
+        ${
+          isPaidAndApproved
+            ? `
+        <div class="detail-row">
+          <span class="detail-label">Payment:</span>
+          <span class="detail-value" style="color: #10b981; font-weight: 600;">✓ Completed</span>
+        </div>
+        `
+            : ""
+        }
       </div>
 
       ${
-        isApproved
+        isPaidAndApproved
+          ? `
+      <!-- Live Campaign Status -->
+      <div class="live-campaign-box">
+        <div class="live-title">🚀 Your Campaign is Now Live!</div>
+        <p style="margin: 10px 0; color: #059669;">Current Status:</p>
+        <div class="matching-status">
+          <p class="matching-text">🎯 Matching with Relevant Influencers</p>
+        </div>
+        <p style="margin: 10px 0 0 0; color: #059669; font-size: 14px;">
+          You'll receive notifications as influencers apply to your campaign
+        </p>
+      </div>
+      `
+          : isApproved
           ? `
       <!-- Payment Deadline -->
       <div class="payment-deadline">
@@ -871,11 +940,19 @@ export const sendCampaignStatusEmail = async (
       <!-- Status Card -->
       <div class="status-card">
         <h2 class="status-title">
-          ${isApproved ? "🎊 Ready to Launch!" : "📝 Next Steps"}
+          ${
+            isPaidAndApproved
+              ? "🎊 Campaign Active!"
+              : isApproved
+              ? "🎊 Ready to Launch!"
+              : "📝 Next Steps"
+          }
         </h2>
         <div style="text-align: center; color: #374151; line-height: 1.6;">
           ${
-            isApproved
+            isPaidAndApproved
+              ? `Your campaign is actively running and being promoted to our network of influencers. You can monitor applications, communicate with interested influencers, and track campaign performance through your dashboard.`
+              : isApproved
               ? `Your campaign has passed our review process and is ready to connect with top influencers. Complete your payment to activate the campaign immediately.`
               : `Please review the feedback above and make the necessary adjustments to your campaign. You can edit and resubmit your campaign through your dashboard.`
           }
@@ -885,10 +962,24 @@ export const sendCampaignStatusEmail = async (
       <!-- Next Steps -->
       <div class="next-steps">
         <h3>${
-          isApproved ? "🚀 How to Proceed:" : "💡 How to Move Forward:"
+          isPaidAndApproved
+            ? "📊 What Happens Next:"
+            : isApproved
+            ? "🚀 How to Proceed:"
+            : "💡 How to Move Forward:"
         }</h3>
         ${
-          isApproved
+          isPaidAndApproved
+            ? `
+        <ul class="steps-list">
+          <li><strong>Influencer Applications:</strong> Relevant influencers will start applying to your campaign</li>
+          <li><strong>Review & Select:</strong> Browse applications and select influencers that fit your brand</li>
+          <li><strong>Direct Communication:</strong> Message selected influencers directly through the platform</li>
+          <li><strong>Content Approval:</strong> Review and approve content before it goes live</li>
+          <li><strong>Track Performance:</strong> Monitor engagement, reach, and campaign metrics in real-time</li>
+        </ul>
+        `
+            : isApproved
             ? `
         <ul class="steps-list">
           <li><strong>Complete Payment:</strong> Click the payment button below to secure your campaign slot</li>
@@ -913,7 +1004,16 @@ export const sendCampaignStatusEmail = async (
       <!-- Call to Action -->
       <div class="cta-container">
         ${
-          isApproved
+          isPaidAndApproved
+            ? `
+        <a href="${loginUrl}/brands/campaigns" class="cta-button">
+          View Applications
+        </a>
+        <a href="${loginUrl}/brands/campaigns/analytics" class="cta-button-secondary">
+          Campaign Analytics
+        </a>
+        `
+            : isApproved
             ? `
         <a href="${loginUrl}/brands/campaigns" class="cta-button-secondary">
           View Campaign Details
@@ -932,7 +1032,9 @@ export const sendCampaignStatusEmail = async (
       
       <p style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
         ${
-          isApproved
+          isPaidAndApproved
+            ? "Questions about managing your live campaign? Our support team is here to help!"
+            : isApproved
             ? "Questions about payment or campaign setup? Our support team is here to help!"
             : "Need help improving your campaign? Our team is ready to assist you!"
         }
@@ -962,11 +1064,12 @@ export const sendCampaignStatusEmail = async (
   };
 
   try {
-    // Send both emails
-    await Promise.all([transporter.sendMail(brandMailOptions)]);
+    await transporter.sendMail(brandMailOptions);
 
     console.log(
-      `Campaign ${status} email sent successfully to ${brandName} (${to})`
+      `Campaign ${
+        isPaidAndApproved ? "live" : status
+      } email sent successfully to ${brandName} (${to})`
     );
   } catch (error) {
     console.error("Error sending campaign status emails:", error);
