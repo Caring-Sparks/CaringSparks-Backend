@@ -816,3 +816,91 @@ export const assignInfluencersToCampaign = async (
     });
   }
 };
+
+export const getAssignedCampaigns = async (req: Request, res: Response) => {
+  try {
+    const { influencerId } = req.params;
+    const {
+      status,
+      campaignType,
+      dateRange,
+      platform,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    // Validate influencer ID
+    if (!influencerId) {
+      return res.status(400).json({
+        success: false,
+        message: "Influencer ID is required",
+      });
+    }
+
+    // Build filter object
+    const filter: any = {
+      assignedInfluencers: { $in: [influencerId] }, // Assuming campaigns have an array of assigned influencer IDs
+    };
+
+    if (status) filter.status = status;
+    if (campaignType) filter.campaignType = campaignType;
+    if (platform) {
+      filter.platforms = {
+        $in: Array.isArray(platform) ? platform : [platform],
+      };
+    }
+
+    // Date range filter
+    if (dateRange) {
+      const now = new Date();
+      let startDate: Date;
+
+      switch (dateRange) {
+        case "week":
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case "month":
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case "3months":
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = new Date(0); // No filter
+      }
+
+      if (startDate.getTime() > 0) {
+        filter.createdAt = { $gte: startDate };
+      }
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    // Fetch campaigns with populated brand information
+    const campaigns = await Campaign.find(filter)
+      .populate("brandId", "name logo email") // Populate brand details
+      .populate("assignedInfluencers", "name profilePicture followers") // Populate other assigned influencers if needed
+      .skip(skip)
+      .limit(Number(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Campaign.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      data: campaigns,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching assigned campaigns:", error);
+    res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
+  }
+};

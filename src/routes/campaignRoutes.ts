@@ -8,6 +8,7 @@ import {
   updatePaymentStatus,
   deleteCampaign,
   assignInfluencersToCampaign,
+  getAssignedCampaigns,
 } from "../controllers/campaignController";
 
 const router = Router();
@@ -20,6 +21,8 @@ router.get("/", getAllCampaigns);
 
 // Get campaign by ID (public view)
 router.get("/:id", getCampaignById);
+
+router.get("/campaigns/:influencerId/campaigns", getAssignedCampaigns);
 
 // =====================
 // Protected Routes (require authentication)

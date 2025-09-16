@@ -478,7 +478,7 @@ export const sendCampaignStatusEmail = async (
     : `📋 Campaign Update: "${brandName}" Status`;
 
   const mainMessage = isApproved
-    ? `Great news, <strong>${brandName}</strong>! Your campaign "<strong>${brandName}</strong>" has been approved and is ready to go live. 
+    ? `Great news, Your campaign for"<strong>${brandName}</strong>" has been approved and is ready to go live. 
        To activate your campaign and start connecting with influencers, please complete your payment within the next 5 days.`
     : `Thank you for submitting your campaign "<strong>${brandName}</strong>", <strong>${brandName}</strong>. 
        After careful review, we're unable to approve your campaign in its current form.`;
@@ -1338,7 +1338,7 @@ export const sendCampaignEmails = async (
         </p>
       </div>
       
-      <p>The campaign is now live in the system and ready for influencer matching.</p>
+      <p>The campaign is now live in the system and awaiting payment.</p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">
         This is an automated notification from the CaringSparks campaign system.
@@ -1513,13 +1513,13 @@ export const sendCampaignEmails = async (
     <div class="content">
       <div class="success-message">
         <div class="success-icon">✅</div>
-        <h3 style="margin: 0; color: #10b981;">Your Campaign is Live!</h3>
-        <p style="margin: 10px 0 0 0;">We're now matching you with the perfect influencers</p>
+        <h3 style="margin: 0; color: #10b981;">Your Campaign has been created!</h3>
+        <p style="margin: 10px 0 0 0;">We're now awaiting payment to begin your campaign</p>
       </div>
 
       <p>Dear <span class="highlight">${brandName}</span>,</p>
       
-      <p>Congratulations! Your influencer marketing campaign has been successfully created on CaringSparks. Our team is already working to connect you with relevant influencers who match your campaign requirements.</p>
+      <p>Congratulations! Your influencer marketing campaign has been successfully created on CaringSparks. Please complete your payment to enable our team match you with verified influencers that match your preferences.</p>
       
       <div class="campaign-summary">
         <h3 style="margin-top: 0; color: #374151;">Campaign Summary</h3>
