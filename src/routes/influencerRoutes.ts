@@ -68,11 +68,7 @@ router.put(
 );
 
 // POST /createInfluencer - Create new influencer
-router.post(
-  "/createInfluencer",
-  uploadAny,
-  createInfluencer
-);
+router.post("/createInfluencer", uploadAny, createInfluencer);
 
 // DYNAMIC ROUTES WITH PARAMETERS (put these last)
 // PATCH /:id/status - Update influencer status
@@ -84,13 +80,7 @@ router.patch(
 );
 
 // PUT /:id - Update influencer (with file upload support)
-router.put(
-  "/:id",
-  authenticateToken,
-  requireAdmin,
-  uploadAny,
-  updateInfluencer
-);
+router.put("/:id", uploadAny, updateInfluencer);
 
 // DELETE /:id - Delete influencer
 router.delete("/:id", authenticateToken, requireAdmin, deleteInfluencer);

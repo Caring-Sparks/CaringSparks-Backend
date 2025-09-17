@@ -878,7 +878,7 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
 
     // Fetch campaigns with populated brand information
     const campaigns = await Campaign.find(filter)
-      .populate("brandId", "name logo email") // Populate brand details
+      .populate("_id", "name logo email") // Populate brand details
       .populate("assignedInfluencers", "name profilePicture followers") // Populate other assigned influencers if needed
       .skip(skip)
       .limit(Number(limit))

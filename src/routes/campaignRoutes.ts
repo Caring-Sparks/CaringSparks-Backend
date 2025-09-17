@@ -22,7 +22,7 @@ router.get("/", getAllCampaigns);
 // Get campaign by ID (public view)
 router.get("/:id", getCampaignById);
 
-router.get("/campaigns/:influencerId/campaigns", getAssignedCampaigns);
+router.get("/:influencerId/campaigns", getAssignedCampaigns);
 
 // =====================
 // Protected Routes (require authentication)
