@@ -9,7 +9,9 @@ import {
   deleteCampaign,
   assignInfluencersToCampaign,
   getAssignedCampaigns,
+  respondToCampaignAssignment,
 } from "../controllers/campaignController";
+import { authenticateToken } from "../middleware/requireHeader";
 
 const router = Router();
 
@@ -41,6 +43,12 @@ router.post("/:id/assign", assignInfluencersToCampaign);
 
 // Update payment status (dedicated endpoint)
 router.put("/:id/payment", updatePaymentStatus);
+
+router.patch(
+  "/:campaignId/respond",
+  authenticateToken,
+  respondToCampaignAssignment
+);
 
 // Delete campaign by ID
 router.delete("/:id", deleteCampaign);

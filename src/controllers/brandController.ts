@@ -5,6 +5,265 @@ import crypto from "crypto";
 import Brand from "../models/Brand";
 import Campaign from "../models/Campaign";
 import { sendBrandEmail } from "../services/emailService";
+import { v2 as cloudinary } from "cloudinary";
+import multer from "multer";
+import type { Express } from "express";
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Configure multer with memory storage
+const storage = multer.memoryStorage();
+
+export const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"));
+    }
+  },
+});
+
+// Upload campaign materials
+export const uploadCampaignMaterials = async (req: Request, res: Response) => {
+  try {
+    const { campaignId } = req.body;
+
+    if (!campaignId) {
+      return res.status(400).json({
+        success: false,
+        message: "Campaign ID is required",
+      });
+    }
+
+    // Find the campaign
+    const campaign = await Campaign.findById(campaignId);
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        message: "Campaign not found",
+      });
+    }
+
+    const files = (req.files as { [fieldname: string]: Express.Multer.File[] })
+      ?.images;
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No files uploaded",
+      });
+    }
+
+    console.log("[v0] Request body:", req.body);
+    console.log("[v0] Files received:", files.length);
+
+    let materialsData: Array<{ description: string }> = [];
+
+    // Check if materials data is sent as JSON array
+    if (req.body.materials && Array.isArray(req.body.materials)) {
+      console.log("[v0] Found materials as JSON array:", req.body.materials);
+      materialsData = req.body.materials.map((material: any) => ({
+        description: material.description || "",
+      }));
+    } else {
+      // Fallback to parsing individual form fields
+      Object.keys(req.body).forEach((key) => {
+        console.log("[v0] Processing key:", key, "value:", req.body[key]);
+        const match = key.match(/materials\[(\d+)\]\[description\]/);
+        if (match) {
+          const index = Number.parseInt(match[1]);
+          materialsData[index] = { description: req.body[key] };
+          console.log(
+            "[v0] Found description at index",
+            index,
+            ":",
+            req.body[key]
+          );
+        }
+      });
+    }
+
+    console.log("[v0] Parsed materials data:", materialsData);
+
+    const uploadPromises = files.map((file, index) => {
+      return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "campaign-materials",
+            allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+            transformation: [
+              { width: 1000, height: 1000, crop: "limit", quality: "auto" },
+            ],
+          },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              const description = materialsData[index]?.description || "";
+              console.log("[v0] Material", index, "description:", description);
+              resolve({
+                imageUrl: result?.secure_url,
+                postDescription: description,
+              });
+            }
+          }
+        );
+        uploadStream.end(file.buffer);
+      });
+    });
+
+    // Wait for all uploads to complete
+    const campaignMaterials: any = await Promise.all(uploadPromises);
+    console.log("[v0] Final campaign materials:", campaignMaterials);
+
+    // Update campaign with new materials
+    campaign.campaignMaterials.push(...campaignMaterials);
+    await campaign.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully uploaded ${campaignMaterials.length} campaign materials`,
+      data: {
+        campaignId: campaign._id,
+        materialsCount: campaignMaterials.length,
+        materials: campaignMaterials,
+      },
+    });
+  } catch (error: any) {
+    console.error("Upload campaign materials error:", error);
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid campaign ID format",
+      });
+    }
+
+    if (error.message === "Only image files are allowed") {
+      return res.status(400).json({
+        success: false,
+        message: "Only image files are allowed",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload campaign materials",
+    });
+  }
+};
+
+// Get campaign materials
+export const getCampaignMaterials = async (req: Request, res: Response) => {
+  try {
+    const { campaignId } = req.params;
+
+    const campaign = await Campaign.findById(campaignId).select(
+      "campaignMaterials brandName"
+    );
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        message: "Campaign not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        campaignId: campaign._id,
+        brandName: campaign.brandName,
+        materials: campaign.campaignMaterials,
+      },
+    });
+  } catch (error: any) {
+    console.error("Get campaign materials error:", error);
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid campaign ID format",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve campaign materials",
+    });
+  }
+};
+
+// Delete campaign material
+export const deleteCampaignMaterial = async (req: Request, res: Response) => {
+  try {
+    const { campaignId, materialId } = req.params;
+
+    const campaign = await Campaign.findById(campaignId);
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        message: "Campaign not found",
+      });
+    }
+
+    // Find and remove the material
+    const materialIndex = campaign.campaignMaterials.findIndex(
+      (material: any) => material._id.toString() === materialId
+    );
+
+    if (materialIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Material not found",
+      });
+    }
+
+    const material = campaign.campaignMaterials[materialIndex];
+
+    // Delete from Cloudinary
+    try {
+      const publicId = material.imageUrl.split("/").pop()?.split(".")[0];
+      if (publicId) {
+        await cloudinary.uploader.destroy(`campaign-materials/${publicId}`);
+      }
+    } catch (cloudinaryError) {
+      console.error("Error deleting from Cloudinary:", cloudinaryError);
+      // Continue with database deletion even if Cloudinary deletion fails
+    }
+
+    // Remove from database
+    campaign.campaignMaterials.splice(materialIndex, 1);
+    await campaign.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Campaign material deleted successfully",
+    });
+  } catch (error: any) {
+    console.error("Delete campaign material error:", error);
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID format",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete campaign material",
+    });
+  }
+};
 
 export const createBrand = async (req: Request, res: Response) => {
   try {
@@ -190,8 +449,8 @@ export const createBrand = async (req: Request, res: Response) => {
 // Get all brands with pagination and filtering
 export const getAllBrands = async (req: Request, res: Response) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const page = Number.parseInt(req.query.page as string) || 1;
+    const limit = Number.parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
     // Build filter object

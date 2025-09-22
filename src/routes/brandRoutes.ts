@@ -3,11 +3,15 @@ import { authenticateToken, requireAdmin } from "../middleware/requireHeader";
 import {
   createBrand,
   deleteBrand,
+  deleteCampaignMaterial,
   getAllBrands,
   getBrandById,
   getBrandStats,
+  getCampaignMaterials,
   updateBrandDetails,
   updateBrandValidationStatus,
+  upload,
+  uploadCampaignMaterials,
 } from "../controllers/brandController";
 import { updateInfluencerStatus } from "../controllers/influencerController";
 
@@ -42,6 +46,17 @@ router.put(
   updateBrandValidationStatus
 );
 
+// Campaign materials routes
+router.post(
+  "/upload-materials",
+  upload.fields([{ name: "images", maxCount: 10 }]),
+  uploadCampaignMaterials
+);
+router.get("/:campaignId/materials", getCampaignMaterials);
+router.delete(
+  "/:campaignId/materials/:materialId",
+  deleteCampaignMaterial
+);
 // PUT /update/:id - Update brand details
 router.put("/update/:id", authenticateToken, requireAdmin, updateBrandDetails);
 

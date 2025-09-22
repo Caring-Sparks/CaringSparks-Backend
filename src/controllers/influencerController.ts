@@ -1130,3 +1130,217 @@ export const bulkUpdateInfluencerStatus = async (
     });
   }
 };
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id?: string;
+    _id?: string;
+    [key: string]: any;
+  };
+}
+
+// Update influencer bank details
+export const updateInfluencerBankDetails = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const { bankDetails } = req.body;
+    const userId = req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated.",
+      });
+    }
+
+    // Validate required fields
+    if (!bankDetails || !bankDetails.bankName || !bankDetails.accountNumber || !bankDetails.accountName) {
+      return res.status(400).json({
+        success: false,
+        message: "Bank name, account number, and account name are required.",
+      });
+    }
+
+    // Validate account number format (10 digits for Nigerian banks)
+    if (!/^\d{10}$/.test(bankDetails.accountNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: "Account number must be exactly 10 digits.",
+      });
+    }
+
+    // List of valid Nigerian banks
+    const validBanks = [
+      "Access Bank", "Citibank Nigeria", "Ecobank Nigeria", "Fidelity Bank",
+      "First Bank of Nigeria", "First City Monument Bank", "Guaranty Trust Bank",
+      "Heritage Bank", "Keystone Bank", "Polaris Bank", "Providus Bank",
+      "Stanbic IBTC Bank", "Standard Chartered Bank", "Sterling Bank",
+      "Union Bank of Nigeria", "United Bank for Africa", "Unity Bank",
+      "Wema Bank", "Zenith Bank", "Jaiz Bank", "SunTrust Bank",
+      "Titan Trust Bank", "VFD Microfinance Bank", "Moniepoint Microfinance Bank",
+      "Opay", "Kuda Bank", "Rubies Bank", "GoMoney", "V Bank"
+    ];
+
+    if (!validBanks.includes(bankDetails.bankName)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid Nigerian bank.",
+      });
+    }
+
+    // Update the influencer's bank details
+    const updatedInfluencer = await Influencer.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          bankDetails: {
+            bankName: bankDetails.bankName,
+            accountNumber: bankDetails.accountNumber,
+            accountName: bankDetails.accountName.trim(),
+            isVerified: false, // Always set to false initially
+          },
+          hasBankDetails: true,
+        },
+      },
+      { new: true, runValidators: true }
+    ).select('-password -passwordResetToken -passwordResetExpires');
+
+    if (!updatedInfluencer) {
+      return res.status(404).json({
+        success: false,
+        message: "Influencer not found.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Bank details updated successfully.",
+      data: {
+        influencer: updatedInfluencer,
+      },
+    });
+
+  } catch (error: any) {
+    console.error("Update bank details error:", error);
+    
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map((err: any) => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed.",
+        errors: validationErrors,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while updating bank details.",
+      ...(process.env.NODE_ENV === "development" && { error: error.message }),
+    });
+  }
+};
+
+// Get influencer bank details
+export const getInfluencerBankDetails = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated.",
+      });
+    }
+
+    const influencer = await Influencer.findById(userId)
+      .select('bankDetails hasBankDetails')
+      .lean();
+
+    if (!influencer) {
+      return res.status(404).json({
+        success: false,
+        message: "Influencer not found.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        bankDetails: influencer.bankDetails || null,
+        hasBankDetails: influencer.hasBankDetails || false,
+      },
+    });
+
+  } catch (error: any) {
+    console.error("Get bank details error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching bank details.",
+      ...(process.env.NODE_ENV === "development" && { error: error.message }),
+    });
+  }
+};
+
+// Admin endpoint to verify bank details
+export const verifyInfluencerBankDetails = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const { influencerId, isVerified } = req.body;
+
+    // Check if user is admin (implement your admin check logic)
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin privileges required.",
+      });
+    }
+
+    if (!influencerId || typeof isVerified !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: "Influencer ID and verification status are required.",
+      });
+    }
+
+    const updatedInfluencer = await Influencer.findByIdAndUpdate(
+      influencerId,
+      {
+        $set: {
+          'bankDetails.isVerified': isVerified,
+        },
+      },
+      { new: true, runValidators: true }
+    ).select('bankDetails hasBankDetails name email');
+
+    if (!updatedInfluencer) {
+      return res.status(404).json({
+        success: false,
+        message: "Influencer not found.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Bank details ${isVerified ? 'verified' : 'unverified'} successfully.`,
+      data: {
+        influencer: updatedInfluencer,
+      },
+    });
+
+  } catch (error: any) {
+    console.error("Verify bank details error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while verifying bank details.",
+      ...(process.env.NODE_ENV === "development" && { error: error.message }),
+    });
+  }
+};

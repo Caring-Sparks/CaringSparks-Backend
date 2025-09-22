@@ -16,6 +16,9 @@ import {
   updateInfluencer,
   bulkUpdateInfluencerStatus,
   getInfluencerStats,
+  getInfluencerBankDetails,
+  updateInfluencerBankDetails,
+  verifyInfluencerBankDetails,
 } from "../controllers/influencerController";
 
 const router = Router();
@@ -37,26 +40,21 @@ const upload = multer({
     ) {
       cb(null, true);
     } else {
-      cb(new Error("Only images and PDF files are allowed"));
+      cb(new Error("Only images and PDFs files are allowed"));
     }
   },
 });
 
 const uploadAny = upload.any();
 
-// Debug middleware with proper typing
-const debugMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  next();
-};
-
-// SPECIFIC ROUTES FIRST (before any dynamic /:id routes)
-
-// PROTECTED ROUTES (require authentication)
-// GET /stats - Get influencer statistics
 router.get("/stats", authenticateToken, getInfluencerStats);
 
 // GET /all-influencers - Get all influencers
 router.get("/all-influencers", authenticateToken, getInfluencers);
+
+// BANK DETAILS ROUTES - MUST BE BEFORE /:id ROUTES
+router.get("/bank-details", authenticateToken, getInfluencerBankDetails);
+router.put("/bank-details", authenticateToken, updateInfluencerBankDetails);
 
 // ADMIN ONLY ROUTES (require admin role)
 // PUT /bulk/status - Bulk update status
@@ -69,6 +67,14 @@ router.put(
 
 // POST /createInfluencer - Create new influencer
 router.post("/createInfluencer", uploadAny, createInfluencer);
+
+// ADMIN BANK VERIFICATION ROUTE
+router.put(
+  "/verify-bank-details",
+  authenticateToken,
+  requireAdmin,
+  verifyInfluencerBankDetails
+);
 
 // DYNAMIC ROUTES WITH PARAMETERS (put these last)
 // PATCH /:id/status - Update influencer status

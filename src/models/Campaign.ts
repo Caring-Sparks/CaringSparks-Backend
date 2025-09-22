@@ -1,5 +1,31 @@
-// Updated Campaign Model with payment details and assigned influencers
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, type Document } from "mongoose";
+
+// Interface for individual influencer assignment
+export interface IAssignedInfluencer {
+  influencerId: mongoose.Types.ObjectId;
+  acceptanceStatus: "pending" | "accepted" | "declined";
+  assignedAt: Date;
+  respondedAt?: Date;
+  isCompleted: boolean;
+  completedAt?: Date;
+  submittedJobs: ISubmittedJob[];
+}
+
+// Interface for submitted job
+export interface ISubmittedJob {
+  description: string;
+  postUrl: string;
+  submittedAt: Date;
+  isApproved?: boolean;
+  approvedAt?: Date;
+  rejectionReason?: string;
+}
+
+// Interface for campaign materials
+export interface ICampaignMaterial {
+  imageUrl: string;
+  postDescription?: string;
+}
 
 export interface ICampaign extends Document {
   // User reference
@@ -21,8 +47,11 @@ export interface ICampaign extends Document {
   postFrequency?: string;
   postDuration?: string;
 
-  // Assigned influencers (new field)
-  assignedInfluencers?: mongoose.Types.ObjectId[];
+  // Campaign materials
+  campaignMaterials: ICampaignMaterial[];
+
+  // Enhanced assigned influencers management
+  assignedInfluencers: IAssignedInfluencer[];
 
   // Calculated pricing fields
   avgInfluencers?: number;
@@ -58,6 +87,91 @@ export interface ICampaign extends Document {
   updatedAt: Date;
 }
 
+// Schema for submitted jobs
+const SubmittedJobSchema: Schema = new Schema(
+  {
+    description: {
+      type: String,
+      required: [true, "Job description is required"],
+      trim: true,
+      maxlength: [500, "Description cannot exceed 500 characters"],
+    },
+    postUrl: {
+      type: String,
+      trim: true,
+    },
+    submittedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    isApproved: {
+      type: Boolean,
+      default: undefined,
+    },
+    approvedAt: {
+      type: Date,
+    },
+    rejectionReason: {
+      type: String,
+      trim: true,
+      maxlength: [200, "Rejection reason cannot exceed 200 characters"],
+    },
+  },
+  { _id: true }
+);
+
+// Schema for assigned influencers
+const AssignedInfluencerSchema: Schema = new Schema(
+  {
+    influencerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Influencer",
+      required: [true, "Influencer ID is required"],
+    },
+    acceptanceStatus: {
+      type: String,
+      enum: ["pending", "accepted", "declined"],
+      default: "pending",
+    },
+    assignedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    respondedAt: {
+      type: Date,
+    },
+    isCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    completedAt: {
+      type: Date,
+    },
+    submittedJobs: {
+      type: [SubmittedJobSchema],
+      default: [],
+    },
+  },
+  { _id: true }
+);
+
+// Schema for campaign materials
+const CampaignMaterialSchema: Schema = new Schema(
+  {
+    imageUrl: {
+      type: String,
+      required: [true, "Material image URL is required"],
+      trim: true,
+    },
+    postDescription: {
+      type: String,
+      trim: true,
+      maxlength: [1000, "Post description cannot exceed 1000 characters"],
+    },
+  },
+  { _id: true }
+);
+
 const CampaignSchema: Schema = new Schema(
   {
     // User reference
@@ -88,9 +202,7 @@ const CampaignSchema: Schema = new Schema(
         "Snapchat",
       ],
       validate: {
-        validator: function (v: string[]) {
-          return v && v.length > 0;
-        },
+        validator: (v: string[]) => v && v.length > 0,
         message: "At least one platform must be selected",
       },
     },
@@ -139,9 +251,7 @@ const CampaignSchema: Schema = new Schema(
       type: [String],
       default: [],
       validate: {
-        validator: function (v: string[]) {
-          return v.every((loc) => loc.trim().length > 0);
-        },
+        validator: (v: string[]) => v.every((loc) => loc.trim().length > 0),
         message: "Additional locations cannot be empty strings",
       },
     },
@@ -155,10 +265,15 @@ const CampaignSchema: Schema = new Schema(
       default: "",
     },
 
-    // Assigned influencers (new field)
+    // Campaign materials field
+    campaignMaterials: {
+      type: [CampaignMaterialSchema],
+      default: [],
+    },
+
+    // Enhanced assigned influencers with detailed tracking
     assignedInfluencers: {
-      type: [mongoose.Schema.Types.ObjectId],
-      ref: "Influencer",
+      type: [AssignedInfluencerSchema],
       default: [],
     },
 
@@ -260,6 +375,12 @@ CampaignSchema.index({ email: 1 });
 CampaignSchema.index({ createdAt: -1 });
 CampaignSchema.index({ hasPaid: 1 });
 CampaignSchema.index({ paymentReference: 1 });
-CampaignSchema.index({ assignedInfluencers: 1 }); // New index
+CampaignSchema.index({ "assignedInfluencers.influencerId": 1 });
+CampaignSchema.index({ "assignedInfluencers.acceptanceStatus": 1 });
+CampaignSchema.index({ "assignedInfluencers.isCompleted": 1 });
+
+// Ensure virtual fields are serialized
+CampaignSchema.set("toJSON", { virtuals: true });
+CampaignSchema.set("toObject", { virtuals: true });
 
 export default mongoose.model<ICampaign>("Campaign", CampaignSchema);

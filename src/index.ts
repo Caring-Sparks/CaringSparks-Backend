@@ -8,6 +8,7 @@ import influencerRoutes from "./routes/influencerRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import campaignRoutes from "./routes/campaignRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
+import deliverablesRoutes from "./routes/deliverablesRoutes";
 //ENV config
 dotenv.config();
 
@@ -48,6 +49,7 @@ app.use("/api/brands", brandRoutes);
 app.use("/api/influencers", influencerRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/deliverables", deliverablesRoutes);
 app.get("/", (_, res) => res.send("API is running 🚀"));
 
 // Start server

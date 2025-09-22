@@ -9,6 +9,14 @@ export interface PlatformData {
   proofUrl?: string; // Cloudinary URL after upload
 }
 
+// Bank account details interface
+export interface BankDetails {
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  isVerified?: boolean;
+}
+
 // Main influencer interface
 export interface IInfluencer extends Document {
   name: string;
@@ -22,6 +30,10 @@ export interface IInfluencer extends Document {
   malePercentage?: string;
   femalePercentage?: string;
   audienceProofUrl?: string; // Cloudinary URL after upload
+
+  // Bank account details
+  bankDetails?: BankDetails;
+  hasBankDetails: boolean; // Flag to check if bank details are provided
 
   // Dynamic platform data
   instagram?: PlatformData;
@@ -70,6 +82,39 @@ const validNiches = [
   "Gaming",
   "Music",
   "Art",
+];
+
+// Nigerian banks list for validation
+const validBanks = [
+  "Access Bank",
+  "Citibank Nigeria",
+  "Ecobank Nigeria",
+  "Fidelity Bank",
+  "First Bank of Nigeria",
+  "First City Monument Bank",
+  "Guaranty Trust Bank",
+  "Heritage Bank",
+  "Keystone Bank",
+  "Polaris Bank",
+  "Providus Bank",
+  "Stanbic IBTC Bank",
+  "Standard Chartered Bank",
+  "Sterling Bank",
+  "Union Bank of Nigeria",
+  "United Bank for Africa",
+  "Unity Bank",
+  "Wema Bank",
+  "Zenith Bank",
+  "Jaiz Bank",
+  "SunTrust Bank",
+  "Titan Trust Bank",
+  "VFD Microfinance Bank",
+  "Moniepoint Microfinance Bank",
+  "Opay",
+  "Kuda Bank",
+  "Rubies Bank",
+  "GoMoney",
+  "V Bank",
 ];
 
 // Mongoose schema
@@ -155,6 +200,41 @@ const InfluencerSchema: Schema = new Schema(
         },
         message: "Invalid URL format for audience proof",
       },
+    },
+
+    // Bank account details
+    bankDetails: {
+      bankName: {
+        type: String,
+        enum: {
+          values: validBanks,
+          message: "Please select a valid Nigerian bank",
+        },
+      },
+      accountNumber: {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            if (!v) return true;
+            // Nigerian account numbers are typically 10 digits
+            return /^\d{10}$/.test(v);
+          },
+          message: "Account number must be exactly 10 digits",
+        },
+      },
+      accountName: {
+        type: String,
+        trim: true,
+        maxlength: 100,
+      },
+      isVerified: {
+        type: Boolean,
+        default: false,
+      },
+    },
+    hasBankDetails: {
+      type: Boolean,
+      default: false,
     },
 
     // Dynamic platform data

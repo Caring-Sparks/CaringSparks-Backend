@@ -748,54 +748,106 @@ export const assignInfluencersToCampaign = async (
     // Remove duplicates from input
     const uniqueInfluencerIds = [...new Set(influencerIds)];
 
+    // Get currently assigned influencer IDs to avoid duplicates
+    const currentlyAssignedIds = campaign.assignedInfluencers.map((inf) =>
+      inf.influencerId.toString()
+    );
+
+    // Filter out already assigned influencers
+    const newInfluencerIds = uniqueInfluencerIds.filter(
+      (id) => !currentlyAssignedIds.includes(id)
+    );
+
+    if (newInfluencerIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "All provided influencers are already assigned to this campaign",
+      });
+    }
+
+    // Calculate total after assignment (existing + new)
+    const totalAfterAssignment =
+      campaign.assignedInfluencers.length + newInfluencerIds.length;
+
     // Check against campaign limits
-    if (uniqueInfluencerIds.length > campaign.influencersMax) {
+    if (totalAfterAssignment > campaign.influencersMax) {
       return res.status(400).json({
         success: false,
-        message: `Cannot assign more than ${campaign.influencersMax} influencers to this campaign`,
+        message: `Cannot assign more influencers. Campaign limit is ${campaign.influencersMax}, currently ${campaign.assignedInfluencers.length} assigned`,
       });
     }
 
-    if (uniqueInfluencerIds.length < campaign.influencersMin) {
-      return res.status(400).json({
-        success: false,
-        message: `Must assign at least ${campaign.influencersMin} influencers to this campaign`,
-      });
-    }
-
-    // TODO: Validate that the influencers exist in your Influencer collection
-    // const existingInfluencers = await Influencer.find({ _id: { $in: uniqueInfluencerIds } });
-    // if (existingInfluencers.length !== uniqueInfluencerIds.length) {
+    // TODO: Validate that the new influencers exist in your Influencer collection
+    // const existingInfluencers = await Influencer.find({ _id: { $in: newInfluencerIds } });
+    // if (existingInfluencers.length !== newInfluencerIds.length) {
     //   return res.status(400).json({
     //     success: false,
     //     message: "Some influencer IDs do not exist",
     //   });
     // }
 
-    // Update the campaign with assigned influencers
+    // Create new assigned influencer objects with proper structure
+    const newAssignedInfluencers = newInfluencerIds.map((influencerId) => ({
+      influencerId: new mongoose.Types.ObjectId(influencerId),
+      acceptanceStatus: "pending" as const,
+      assignedAt: new Date(),
+      isCompleted: false,
+      submittedJobs: [],
+    }));
+
+    // Update the campaign by pushing new assignments
     const updatedCampaign = await Campaign.findByIdAndUpdate(
       id,
       {
-        assignedInfluencers: uniqueInfluencerIds,
-        // You might want to update the status when influencers are assigned
-        // status: "in-progress" // or whatever status makes sense
+        $push: {
+          assignedInfluencers: { $each: newAssignedInfluencers },
+        },
+        // Update status if this is the first assignment
+        ...(campaign.assignedInfluencers.length === 0 && {
+          status: "approved",
+        }),
       },
       {
         new: true,
         runValidators: true,
       }
-    ).populate("assignedInfluencers", "name email phone location");
+    ).populate("assignedInfluencers.influencerId", "name email phone location");
 
-    // Send email notification to brand about assigned influencers
+    if (!updatedCampaign) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update campaign",
+      });
+    }
+
+    // Check if minimum requirement is now met
+    const totalAssigned = updatedCampaign.assignedInfluencers.length;
+    if (totalAssigned < campaign.influencersMin) {
+      console.log(
+        `Campaign still needs ${
+          campaign.influencersMin - totalAssigned
+        } more influencers`
+      );
+    }
+
+    // Extract populated influencer data for email
+    const populatedInfluencers = updatedCampaign.assignedInfluencers
+      .filter((assignment) =>
+        newInfluencerIds.includes(assignment.influencerId._id?.toString())
+      )
+      .map((assignment) => assignment.influencerId);
+
+    // Send email notification to brand about newly assigned influencers
     try {
-      if (updatedCampaign && updatedCampaign.assignedInfluencers) {
+      if (populatedInfluencers.length > 0) {
         const campaignForEmail = convertCampaignForEmail(updatedCampaign);
 
         await sendInfluencersAssignedEmail(
           updatedCampaign.email,
           updatedCampaign.brandName,
           campaignForEmail,
-          updatedCampaign.assignedInfluencers as any
+          populatedInfluencers as any
         );
       }
     } catch (emailError) {
@@ -806,7 +858,14 @@ export const assignInfluencersToCampaign = async (
     res.status(200).json({
       success: true,
       data: updatedCampaign,
-      message: `${uniqueInfluencerIds.length} influencers assigned successfully`,
+      message: `${newInfluencerIds.length} new influencers assigned successfully. Total assigned: ${totalAssigned}`,
+      summary: {
+        newlyAssigned: newInfluencerIds.length,
+        totalAssigned: totalAssigned,
+        campaignMinimum: campaign.influencersMin,
+        campaignMaximum: campaign.influencersMax,
+        minimumMet: totalAssigned >= campaign.influencersMin,
+      },
     });
   } catch (error) {
     console.error("Assign influencers error:", error);
@@ -829,7 +888,6 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
       limit = 10,
     } = req.query;
 
-    // Validate influencer ID
     if (!influencerId) {
       return res.status(400).json({
         success: false,
@@ -837,9 +895,8 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
       });
     }
 
-    // Build filter object
     const filter: any = {
-      assignedInfluencers: { $in: [influencerId] }, // Assuming campaigns have an array of assigned influencer IDs
+      "assignedInfluencers.influencerId": influencerId, // Correctly filter by influencer ID within the subdocument
     };
 
     if (status) filter.status = status;
@@ -850,8 +907,8 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
       };
     }
 
-    // Date range filter
     if (dateRange) {
+      // ... (your existing date range filter logic)
       const now = new Date();
       let startDate: Date;
 
@@ -866,7 +923,7 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
           startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
           break;
         default:
-          startDate = new Date(0); // No filter
+          startDate = new Date(0);
       }
 
       if (startDate.getTime() > 0) {
@@ -876,10 +933,14 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    // Fetch campaigns with populated brand information
     const campaigns = await Campaign.find(filter)
-      .populate("_id", "name logo email") // Populate brand details
-      .populate("assignedInfluencers", "name profilePicture followers") // Populate other assigned influencers if needed
+      // Only populate fields that are true references.
+      // brandName and email are on the Campaign doc, so no populating is needed.
+      // Remove the .populate("userId", ...) call.
+      .populate(
+        "assignedInfluencers.influencerId",
+        "name profilePicture followers"
+      )
       .skip(skip)
       .limit(Number(limit))
       .sort({ createdAt: -1 });
@@ -901,6 +962,107 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: (error as Error).message,
+    });
+  }
+};
+
+export const respondToCampaignAssignment = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { campaignId } = req.params;
+    const { status, message } = req.body; // 'status' will be 'accepted' or 'declined'
+
+    const influencerId = (req as any).user?.id || (req as any).user?._id;
+    if (!influencerId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated.",
+      });
+    }
+
+    if (!["accepted", "declined"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status provided. Must be 'accepted' or 'declined'.",
+      });
+    }
+
+    // Validate campaign ID format
+    if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid campaign ID format.",
+      });
+    }
+
+    // Validate influencer ID format
+    if (!mongoose.Types.ObjectId.isValid(influencerId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid influencer ID format.",
+      });
+    }
+
+    // Fix 2: Convert influencerId to ObjectId for proper comparison
+    const campaign = await Campaign.findOneAndUpdate(
+      {
+        _id: campaignId,
+        "assignedInfluencers.influencerId": new mongoose.Types.ObjectId(
+          influencerId
+        ),
+        "assignedInfluencers.acceptanceStatus": "pending", // Only update if still pending
+      },
+      {
+        $set: {
+          "assignedInfluencers.$.acceptanceStatus": status,
+          "assignedInfluencers.$.respondedAt": new Date(),
+          // Optional: Add response message if you want to store it
+          ...(message && { "assignedInfluencers.$.responseMessage": message }),
+        },
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Campaign assignment not found, already responded to, or you're not assigned to this campaign.",
+      });
+    }
+
+    // Optional: Send notification emails or other side effects based on response
+    try {
+      if (status === "accepted") {
+        // Send acceptance notification to brand
+        console.log(
+          `Influencer ${influencerId} accepted campaign ${campaignId}`
+        );
+      } else {
+        // Send decline notification to brand
+        console.log(
+          `Influencer ${influencerId} declined campaign ${campaignId}`
+        );
+      }
+    } catch (notificationError) {
+      console.error("Failed to send notification:", notificationError);
+      // Don't fail the request if notification fails
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Campaign ${status} successfully.`,
+      data: campaign,
+    });
+  } catch (err: any) {
+    console.error("Respond to campaign assignment error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while processing response.",
+      // Only include error details in development
+      ...(process.env.NODE_ENV === "development" && { error: err.message }),
     });
   }
 };
