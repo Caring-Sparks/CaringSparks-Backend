@@ -6,7 +6,7 @@ export const sendBrandEmail = async (
   brandName: string
 ) => {
   const companyName = "CaringSparks";
-  const loginUrl = "https://caring-sparks.vercel.app/";
+  const loginUrl = "https://caring-sparks.vercel.app";
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -264,7 +264,7 @@ export const sendBrandEmail = async (
       
       <!-- Call to Action -->
       <div class="cta-container">
-        <a href="${loginUrl}" class="cta-button">
+        <a href="${loginUrl}/brand" class="cta-button">
           Access Your Brand Dashboard
         </a>
       </div>
@@ -282,7 +282,7 @@ export const sendBrandEmail = async (
       </p>
       
       <div class="footer-links">
-        <a href="${loginUrl}">Login</a>
+        <a href="${loginUrl}/brand">Login</a>
         <a href="mailto:support@caringsparks.com">Support</a>
         <a href="https://caring-sparks.vercel.app/">Privacy Policy</a>
       </div>
@@ -453,7 +453,7 @@ export const sendCampaignStatusEmail = async (
   hasPaid?: boolean
 ) => {
   const companyName = "CaringSparks";
-  const loginUrl = "https://caring-sparks.vercel.app/";
+  const loginUrl = "https://caring-sparks.vercel.app";
   const supportEmail = "support@caringsparks.com";
 
   const transporter = nodemailer.createTransport({
@@ -1009,7 +1009,7 @@ export const sendCampaignStatusEmail = async (
         <a href="${loginUrl}/brands/campaigns" class="cta-button">
           View Applications
         </a>
-        <a href="${loginUrl}/brands/campaigns/analytics" class="cta-button-secondary">
+        <a href="${loginUrl}/brands/campaigns" class="cta-button-secondary">
           Campaign Analytics
         </a>
         `
@@ -1048,7 +1048,7 @@ export const sendCampaignStatusEmail = async (
       </p>
       
       <div class="footer-links">
-        <a href="${loginUrl}">Dashboard</a>
+        <a href="${loginUrl}/brand">Dashboard</a>
         <a href="mailto:${supportEmail}">Support</a>
         <a href="https://caring-sparks.vercel.app/privacy">Privacy Policy</a>
       </div>

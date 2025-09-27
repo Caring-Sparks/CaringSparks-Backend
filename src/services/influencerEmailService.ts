@@ -584,7 +584,7 @@ export const sendInfluencerWelcomeEmail = async (
       
       <!-- Call to Action -->
       <div class="cta-container">
-        <a href="${loginUrl}" class="cta-button">
+        <a href="${loginUrl}/influencer" class="cta-button">
           Access Your Influencer Dashboard
         </a>
       </div>
@@ -1721,7 +1721,7 @@ export const sendInfluencerStatusEmail = async (
         ${
           isApproved
             ? `
-        <a href="${loginUrl}" class="cta-button">
+        <a href="${loginUrl}/influencer" class="cta-button">
           Access Your Dashboard
         </a>
         <a href="mailto:${supportEmail}" class="cta-button-secondary">

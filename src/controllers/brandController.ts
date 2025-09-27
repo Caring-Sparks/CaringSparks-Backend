@@ -8,6 +8,7 @@ import { sendBrandEmail } from "../services/emailService";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import type { Express } from "express";
+import mongoose from "mongoose";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -768,12 +769,21 @@ export const updateBrandDetails = async (req: Request, res: Response) => {
 };
 
 // Delete brand
+
 export const deleteBrand = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const brand = await Brand.findByIdAndDelete(id);
+    // Validate the ID format first
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid brand ID format",
+      });
+    }
 
+    // Check if brand exists before deletion
+    const brand = await Brand.findById(id);
     if (!brand) {
       return res.status(404).json({
         success: false,
@@ -781,20 +791,53 @@ export const deleteBrand = async (req: Request, res: Response) => {
       });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Brand deleted successfully",
-      data: {
-        deletedBrand: {
-          id: brand._id,
-          brandName: brand.brandName,
-          email: brand.email,
+    // Find all campaigns associated with this brand's userId
+    const associatedCampaigns = await Campaign.find({ userId: id });
+
+    // Start a transaction to ensure data consistency
+    const session = await mongoose.startSession();
+
+    try {
+      await session.withTransaction(async () => {
+        // Delete all associated campaigns first
+        if (associatedCampaigns.length > 0) {
+          await Campaign.deleteMany({ userId: id }, { session });
+        }
+
+        // Then delete the brand
+        await Brand.findByIdAndDelete(id, { session });
+      });
+
+      await session.endSession();
+
+      res.status(200).json({
+        success: true,
+        message: "Brand and associated campaigns deleted successfully",
+        data: {
+          deletedBrand: {
+            id: brand._id,
+            brandName: brand.brandName,
+            email: brand.email,
+          },
+          deletedCampaigns: {
+            count: associatedCampaigns.length,
+            campaigns: associatedCampaigns.map((campaign) => ({
+              id: campaign._id,
+              brandName: campaign.brandName,
+              platforms: campaign.platforms,
+              createdAt: campaign.createdAt,
+            })),
+          },
         },
-      },
-    });
+      });
+    } catch (transactionError) {
+      await session.endSession();
+      throw transactionError;
+    }
   } catch (error: any) {
     console.error("Delete brand error:", error);
 
+    // Handle specific MongoDB errors
     if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
@@ -802,9 +845,18 @@ export const deleteBrand = async (req: Request, res: Response) => {
       });
     }
 
+    // Handle transaction errors
+    if (error.name === "MongoServerError" && error.code === 11000) {
+      return res.status(500).json({
+        success: false,
+        message: "Database constraint error during deletion",
+      });
+    }
+
     res.status(500).json({
       success: false,
-      message: "Failed to delete brand",
+      message: "Failed to delete brand and associated campaigns",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };

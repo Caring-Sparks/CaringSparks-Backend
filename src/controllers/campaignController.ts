@@ -9,7 +9,10 @@ import {
 import {
   sendPaymentConfirmationEmail,
   sendInfluencersAssignedEmail,
+  sendInfluencerAssignmentEmail,
 } from "../services/campaignEmailServices";
+import Influencer from "../models/Influencer";
+import nodemailer from "nodemailer";
 
 // Interface to extend Request with user data
 interface AuthenticatedRequest extends Request {
@@ -28,6 +31,18 @@ const convertCampaignForEmail = (campaignDoc: any) => {
     _id: campaign._id.toString(), // Ensure _id is a string
   };
 };
+
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+};
+
+const transporter = createTransporter();
 
 // Create a new campaign
 export const createCampaign = async (
@@ -609,9 +624,6 @@ export const deleteCampaign = async (req: Request, res: Response) => {
   }
 };
 
-// Additional utility functions
-
-// Get campaigns by email (for user's own campaigns)
 export const getCampaignsByEmail = async (req: Request, res: Response) => {
   try {
     const { email } = req.params;
@@ -778,14 +790,16 @@ export const assignInfluencersToCampaign = async (
       });
     }
 
-    // TODO: Validate that the new influencers exist in your Influencer collection
-    // const existingInfluencers = await Influencer.find({ _id: { $in: newInfluencerIds } });
-    // if (existingInfluencers.length !== newInfluencerIds.length) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Some influencer IDs do not exist",
-    //   });
-    // }
+    const newInfluencers = await Influencer.find({
+      _id: { $in: newInfluencerIds },
+    }).select("name email phone location");
+
+    if (newInfluencers.length !== newInfluencerIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Some influencer IDs do not exist",
+      });
+    }
 
     // Create new assigned influencer objects with proper structure
     const newAssignedInfluencers = newInfluencerIds.map((influencerId) => ({
@@ -812,13 +826,42 @@ export const assignInfluencersToCampaign = async (
         new: true,
         runValidators: true,
       }
-    ).populate("assignedInfluencers.influencerId", "name email phone location");
+    );
 
     if (!updatedCampaign) {
       return res.status(500).json({
         success: false,
         message: "Failed to update campaign",
       });
+    }
+
+    try {
+      const emailPromises = newInfluencers.map(async (influencer) => {
+        try {
+          const campaignForEmail = convertCampaignForEmail(updatedCampaign);
+
+          const emailData = sendInfluencerAssignmentEmail(
+            influencer.email,
+            influencer.name,
+            campaignForEmail
+          );
+
+          await transporter.sendMail({
+            from: `"CaringSparks Team" <${process.env.EMAIL_USER}>`,
+            ...emailData,
+          });
+        } catch (error) {
+          console.error(
+            `Failed to send assignment email to ${influencer.email}:`,
+            error
+          );
+          throw error;
+        }
+      });
+
+      const emailResults = await Promise.allSettled(emailPromises);
+    } catch (emailError) {
+      console.error("Failed to send influencer assignment emails:", emailError);
     }
 
     // Check if minimum requirement is now met
@@ -829,30 +872,6 @@ export const assignInfluencersToCampaign = async (
           campaign.influencersMin - totalAssigned
         } more influencers`
       );
-    }
-
-    // Extract populated influencer data for email
-    const populatedInfluencers = updatedCampaign.assignedInfluencers
-      .filter((assignment) =>
-        newInfluencerIds.includes(assignment.influencerId._id?.toString())
-      )
-      .map((assignment) => assignment.influencerId);
-
-    // Send email notification to brand about newly assigned influencers
-    try {
-      if (populatedInfluencers.length > 0) {
-        const campaignForEmail = convertCampaignForEmail(updatedCampaign);
-
-        await sendInfluencersAssignedEmail(
-          updatedCampaign.email,
-          updatedCampaign.brandName,
-          campaignForEmail,
-          populatedInfluencers as any
-        );
-      }
-    } catch (emailError) {
-      console.error("Failed to send influencers assigned email:", emailError);
-      // Don't fail the request if email fails, but log it
     }
 
     res.status(200).json({
