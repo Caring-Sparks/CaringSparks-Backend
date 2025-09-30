@@ -177,7 +177,7 @@ const CampaignSchema: Schema = new Schema(
     // User reference
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Brand",
       required: [true, "User ID is required"],
     },
 

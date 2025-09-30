@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import Campaign from "../models/Campaign";
+import Influencer from "../models/Influencer";
+import { sendDeliverablesSubmissionWhatsApp } from "../services/whatsAppService";
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -166,7 +168,7 @@ export const submitCampaignDeliverables = async (
       `Campaign requires ${requiredPostCount} posts, submitting ${deliverables.length} deliverables`
     );
 
-    // **KEY FIX**: Check if the number of deliverables matches the required post count
+    // Check if the number of deliverables matches the required post count
     if (deliverables.length !== requiredPostCount) {
       return res.status(400).json({
         success: false,
@@ -175,8 +177,17 @@ export const submitCampaignDeliverables = async (
           requiredPosts: requiredPostCount,
           submittedPosts: deliverables.length,
           remainingPosts: requiredPostCount - deliverables.length,
-          allowPartialSubmission: false, // This campaign requires all posts at once
+          allowPartialSubmission: false,
         },
+      });
+    }
+
+    // Get influencer details
+    const influencer = await Influencer.findById(influencerId).select("name");
+    if (!influencer) {
+      return res.status(404).json({
+        success: false,
+        message: "Influencer not found.",
       });
     }
 
@@ -193,7 +204,7 @@ export const submitCampaignDeliverables = async (
       submittedAt: new Date(),
     }));
 
-    // **ONLY mark as complete if all posts are submitted**
+    // Mark as complete when all posts are submitted
     const updatedCampaign = await Campaign.findOneAndUpdate(
       {
         _id: campaignId,
@@ -204,18 +215,48 @@ export const submitCampaignDeliverables = async (
       {
         $set: {
           "assignedInfluencers.$.submittedJobs": submittedJobs,
-          "assignedInfluencers.$.isCompleted": true, // Only set to true when all posts are submitted
+          "assignedInfluencers.$.isCompleted": true,
           "assignedInfluencers.$.completedAt": new Date(),
         },
       },
       { new: true, runValidators: true }
-    ).populate("assignedInfluencers.influencerId", "name email");
+    ).populate("brandId", "name phone");
 
     if (!updatedCampaign) {
       return res.status(500).json({
         success: false,
         message: "Failed to update campaign with deliverables.",
       });
+    }
+
+    // Send WhatsApp notification to brand
+    try {
+      const brand = updatedCampaign.userId as any;
+
+      if (brand?.brandPhone) {
+        const whatsappResult = await sendDeliverablesSubmissionWhatsApp(
+          brand.brandPhone,
+          brand.brandName || "Brand",
+          influencer.name,
+          updatedCampaign.brandName,
+          deliverables.length,
+          requiredPostCount
+        );
+
+        if (!whatsappResult.success) {
+          console.error(
+            "Failed to send WhatsApp to brand:",
+            whatsappResult.error
+          );
+        } else {
+          console.log(
+            `WhatsApp notification sent to ${brand.name} for deliverable submission`
+          );
+        }
+      }
+    } catch (notificationError) {
+      console.error("Failed to send WhatsApp notification:", notificationError);
+      // Don't fail the request if notification fails
     }
 
     res.status(200).json({
@@ -255,14 +296,19 @@ export const getDeliverableStatus = async (
       });
     }
 
-    const campaign = await Campaign.findOne({
-      _id: campaignId,
-      "assignedInfluencers.influencerId": new mongoose.Types.ObjectId(influencerId),
-    }, {
-      "assignedInfluencers.$": 1,
-      brandName: 1,
-      platforms: 1,
-    });
+    const campaign = await Campaign.findOne(
+      {
+        _id: campaignId,
+        "assignedInfluencers.influencerId": new mongoose.Types.ObjectId(
+          influencerId
+        ),
+      },
+      {
+        "assignedInfluencers.$": 1,
+        brandName: 1,
+        platforms: 1,
+      }
+    );
 
     if (!campaign) {
       return res.status(404).json({

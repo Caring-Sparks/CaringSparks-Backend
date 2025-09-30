@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Campaign from "../models/Campaign";
+import Brand from "../models/Brand";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import {
@@ -13,6 +14,10 @@ import {
 } from "../services/campaignEmailServices";
 import Influencer from "../models/Influencer";
 import nodemailer from "nodemailer";
+import {
+  sendCampaignAssignmentWhatsApp,
+  sendCampaignResponseWhatsApp,
+} from "../services/whatsAppService";
 
 // Interface to extend Request with user data
 interface AuthenticatedRequest extends Request {
@@ -790,9 +795,10 @@ export const assignInfluencersToCampaign = async (
       });
     }
 
+    // Select whatsapp field instead of phone
     const newInfluencers = await Influencer.find({
       _id: { $in: newInfluencerIds },
-    }).select("name email phone location");
+    }).select("name email whatsapp location phone");
 
     if (newInfluencers.length !== newInfluencerIds.length) {
       return res.status(400).json({
@@ -835,6 +841,7 @@ export const assignInfluencersToCampaign = async (
       });
     }
 
+    // Send email notifications
     try {
       const emailPromises = newInfluencers.map(async (influencer) => {
         try {
@@ -859,9 +866,53 @@ export const assignInfluencersToCampaign = async (
         }
       });
 
-      const emailResults = await Promise.allSettled(emailPromises);
+      await Promise.allSettled(emailPromises);
     } catch (emailError) {
       console.error("Failed to send influencer assignment emails:", emailError);
+    }
+
+    // Send WhatsApp notifications
+    try {
+      const whatsappPromises = newInfluencers.map(async (influencer) => {
+        // Only send WhatsApp if whatsapp field exists
+        if (!influencer.whatsapp) {
+          console.log(`No WhatsApp number for influencer ${influencer.name}`);
+          return { success: false, reason: "no_whatsapp" };
+        }
+
+        try {
+          const result = await sendCampaignAssignmentWhatsApp(
+            influencer.whatsapp,
+            influencer.name,
+            updatedCampaign
+          );
+
+          if (!result.success) {
+            console.error(
+              `Failed to send WhatsApp to ${influencer.name} (${influencer.whatsapp}):`,
+              result.error
+            );
+          }
+
+          return result;
+        } catch (error) {
+          console.error(`WhatsApp error for ${influencer.name}:`, error);
+          return { success: false, error: (error as Error).message };
+        }
+      });
+
+      const whatsappResults = await Promise.allSettled(whatsappPromises);
+
+      // Log WhatsApp notification summary
+      const successfulWhatsApp = whatsappResults.filter(
+        (result) => result.status === "fulfilled" && result.value.success
+      ).length;
+
+      console.log(
+        `WhatsApp notifications sent: ${successfulWhatsApp}/${newInfluencers.length}`
+      );
+    } catch (whatsappError) {
+      console.error("Failed to send WhatsApp notifications:", whatsappError);
     }
 
     // Check if minimum requirement is now met
@@ -1024,7 +1075,16 @@ export const respondToCampaignAssignment = async (
       });
     }
 
-    // Fix 2: Convert influencerId to ObjectId for proper comparison
+    // Get influencer details before update
+    const influencer = await Influencer.findById(influencerId).select("name");
+    if (!influencer) {
+      return res.status(404).json({
+        success: false,
+        message: "Influencer not found.",
+      });
+    }
+
+    // Convert influencerId to ObjectId for proper comparison
     const campaign = await Campaign.findOneAndUpdate(
       {
         _id: campaignId,
@@ -1042,7 +1102,7 @@ export const respondToCampaignAssignment = async (
         },
       },
       { new: true, runValidators: true }
-    );
+    ).populate("userId", "brandName brandPhone");
 
     if (!campaign) {
       return res.status(404).json({
@@ -1052,18 +1112,72 @@ export const respondToCampaignAssignment = async (
       });
     }
 
-    // Optional: Send notification emails or other side effects based on response
+    // Send notifications based on response
     try {
+      const brand = campaign.userId as any;
+      console.log("Brand details:", brand);
+
+      if (!brand) {
+        console.error("Brand not found for campaign");
+        return;
+      }
+
       if (status === "accepted") {
-        // Send acceptance notification to brand
         console.log(
-          `Influencer ${influencerId} accepted campaign ${campaignId}`
+          `Influencer ${influencer.name} accepted campaign ${campaign.brandName}`
         );
+
+        if (brand.brandPhone) {
+          console.log(`Sending WhatsApp to brand phone: ${brand.brandPhone}`);
+
+          const whatsappResult = await sendCampaignResponseWhatsApp(
+            brand.brandPhone,
+            brand.brandName || "Brand",
+            influencer.name,
+            campaign.brandName,
+            "accepted",
+            message
+          );
+
+          if (whatsappResult.success) {
+            console.log("WhatsApp sent successfully to brand");
+          } else {
+            console.error(
+              "Failed to send WhatsApp to brand:",
+              whatsappResult.error
+            );
+          }
+        } else {
+          console.log("Brand has no phone number");
+        }
       } else {
-        // Send decline notification to brand
         console.log(
-          `Influencer ${influencerId} declined campaign ${campaignId}`
+          `Influencer ${influencer.name} declined campaign ${campaign.brandName}`
         );
+
+        if (brand.brandPhone) {
+          console.log(`Sending WhatsApp to brand phone: ${brand.brandPhone}`);
+
+          const whatsappResult = await sendCampaignResponseWhatsApp(
+            brand.brandPhone,
+            brand.brandName || "Brand",
+            influencer.name,
+            campaign.brandName,
+            "declined",
+            message
+          );
+
+          if (whatsappResult.success) {
+            console.log("WhatsApp sent successfully to brand");
+          } else {
+            console.error(
+              "Failed to send WhatsApp to brand:",
+              whatsappResult.error
+            );
+          }
+        } else {
+          console.log("Brand has no phone number");
+        }
       }
     } catch (notificationError) {
       console.error("Failed to send notification:", notificationError);

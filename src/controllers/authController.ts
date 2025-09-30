@@ -21,7 +21,7 @@ export const generateToken = (
   return jwt.sign(
     { id: userId, role, email },
     process.env.JWT_SECRET as string,
-    { expiresIn: "1h" }
+    { expiresIn: "1h" } //change to 7 days upon deployment
   );
 };
 
