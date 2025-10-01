@@ -1139,13 +1139,20 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-// Update influencer bank details
-export const updateInfluencerBankDetails = async (
+export const updateInfluencerPaymentDetails = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
-    const { bankDetails } = req.body;
+    const {
+      paymentType,
+      bankName,
+      accountNumber,
+      accountName,
+      walletAddress,
+      network,
+      walletType,
+    } = req.body;
     const userId = req.user?.id || req.user?._id;
 
     if (!userId) {
@@ -1155,57 +1162,111 @@ export const updateInfluencerBankDetails = async (
       });
     }
 
-    // Validate required fields
-    if (!bankDetails || !bankDetails.bankName || !bankDetails.accountNumber || !bankDetails.accountName) {
+    // Validate payment type
+    if (!paymentType || !["bank", "crypto"].includes(paymentType)) {
       return res.status(400).json({
         success: false,
-        message: "Bank name, account number, and account name are required.",
+        message: "Payment type must be either 'bank' or 'crypto'.",
       });
     }
 
-    // Validate account number format (10 digits for Nigerian banks)
-    if (!/^\d{10}$/.test(bankDetails.accountNumber)) {
-      return res.status(400).json({
-        success: false,
-        message: "Account number must be exactly 10 digits.",
-      });
-    }
+    let updateData: any = {};
 
-    // List of valid Nigerian banks
-    const validBanks = [
-      "Access Bank", "Citibank Nigeria", "Ecobank Nigeria", "Fidelity Bank",
-      "First Bank of Nigeria", "First City Monument Bank", "Guaranty Trust Bank",
-      "Heritage Bank", "Keystone Bank", "Polaris Bank", "Providus Bank",
-      "Stanbic IBTC Bank", "Standard Chartered Bank", "Sterling Bank",
-      "Union Bank of Nigeria", "United Bank for Africa", "Unity Bank",
-      "Wema Bank", "Zenith Bank", "Jaiz Bank", "SunTrust Bank",
-      "Titan Trust Bank", "VFD Microfinance Bank", "Moniepoint Microfinance Bank",
-      "Opay", "Kuda Bank", "Rubies Bank", "GoMoney", "V Bank"
-    ];
+    if (paymentType === "bank") {
+      // Validate bank details
+      if (!bankName || !accountNumber || !accountName) {
+        return res.status(400).json({
+          success: false,
+          message: "Bank name, account number, and account name are required.",
+        });
+      }
 
-    if (!validBanks.includes(bankDetails.bankName)) {
-      return res.status(400).json({
-        success: false,
-        message: "Please select a valid Nigerian bank.",
-      });
-    }
+      // Validate account number format (10 digits for Nigerian banks)
+      if (!/^\d{10}$/.test(accountNumber)) {
+        return res.status(400).json({
+          success: false,
+          message: "Account number must be exactly 10 digits.",
+        });
+      }
 
-    // Update the influencer's bank details
-    const updatedInfluencer = await Influencer.findByIdAndUpdate(
-      userId,
-      {
+      // Validate bank name is not empty
+      if (bankName.trim().length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: "Please enter a valid bank name (at least 2 characters).",
+        });
+      }
+
+      updateData = {
         $set: {
           bankDetails: {
-            bankName: bankDetails.bankName,
-            accountNumber: bankDetails.accountNumber,
-            accountName: bankDetails.accountName.trim(),
-            isVerified: false, // Always set to false initially
+            bankName: bankName.trim(),
+            accountNumber: accountNumber,
+            accountName: accountName.trim(),
+            isVerified: false,
           },
           hasBankDetails: true,
+          paymentMethod: "bank",
         },
-      },
+      };
+    } else if (paymentType === "crypto") {
+      // Validate crypto details
+      if (!walletAddress || !network || !walletType) {
+        return res.status(400).json({
+          success: false,
+          message: "Wallet address, network, and wallet type are required.",
+        });
+      }
+
+      // Validate wallet address length
+      if (walletAddress.trim().length < 26) {
+        return res.status(400).json({
+          success: false,
+          message: "Please enter a valid wallet address.",
+        });
+      }
+
+      // Validate network
+      const validNetworks = [
+        "Bitcoin (BTC)",
+        "Ethereum (ETH)",
+        "Binance Smart Chain (BSC)",
+        "Tron (TRX)",
+        "Polygon (MATIC)",
+        "Solana (SOL)",
+        "USDT (TRC20)",
+        "USDT (ERC20)",
+        "USDT (BSC)",
+        "USDC",
+      ];
+
+      if (!validNetworks.includes(network)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a valid cryptocurrency network.",
+        });
+      }
+
+      updateData = {
+        $set: {
+          cryptoDetails: {
+            walletAddress: walletAddress.trim(),
+            network: network,
+            walletType: walletType.trim(),
+            isVerified: false,
+          },
+          hasCryptoDetails: true,
+          paymentMethod: "crypto",
+        },
+      };
+    }
+
+    // Update the influencer's payment details
+    const updatedInfluencer = await Influencer.findByIdAndUpdate(
+      userId,
+      updateData,
       { new: true, runValidators: true }
-    ).select('-password -passwordResetToken -passwordResetExpires');
+    ).select("-password -passwordResetToken -passwordResetExpires");
 
     if (!updatedInfluencer) {
       return res.status(404).json({
@@ -1216,18 +1277,20 @@ export const updateInfluencerBankDetails = async (
 
     res.status(200).json({
       success: true,
-      message: "Bank details updated successfully.",
+      message: `${
+        paymentType === "bank" ? "Bank" : "Crypto"
+      } payment details updated successfully.`,
       data: {
         influencer: updatedInfluencer,
       },
     });
-
   } catch (error: any) {
-    console.error("Update bank details error:", error);
-    
-    // Handle mongoose validation errors
-    if (error.name === 'ValidationError') {
-      const validationErrors = Object.values(error.errors).map((err: any) => err.message);
+    console.error("Update payment details error:", error);
+
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.values(error.errors).map(
+        (err: any) => err.message
+      );
       return res.status(400).json({
         success: false,
         message: "Validation failed.",
@@ -1237,14 +1300,14 @@ export const updateInfluencerBankDetails = async (
 
     res.status(500).json({
       success: false,
-      message: "Internal server error while updating bank details.",
+      message: "Internal server error while updating payment details.",
       ...(process.env.NODE_ENV === "development" && { error: error.message }),
     });
   }
 };
 
-// Get influencer bank details
-export const getInfluencerBankDetails = async (
+// Get influencer payment details (both bank and crypto)
+export const getInfluencerPaymentDetails = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
@@ -1259,7 +1322,9 @@ export const getInfluencerBankDetails = async (
     }
 
     const influencer = await Influencer.findById(userId)
-      .select('bankDetails hasBankDetails')
+      .select(
+        "bankDetails hasBankDetails cryptoDetails hasCryptoDetails paymentMethod"
+      )
       .lean();
 
     if (!influencer) {
@@ -1272,53 +1337,70 @@ export const getInfluencerBankDetails = async (
     res.status(200).json({
       success: true,
       data: {
+        paymentMethod: influencer.paymentMethod || null,
         bankDetails: influencer.bankDetails || null,
         hasBankDetails: influencer.hasBankDetails || false,
+        cryptoDetails: influencer.cryptoDetails || null,
+        hasCryptoDetails: influencer.hasCryptoDetails || false,
       },
     });
-
   } catch (error: any) {
-    console.error("Get bank details error:", error);
+    console.error("Get payment details error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error while fetching bank details.",
+      message: "Internal server error while fetching payment details.",
       ...(process.env.NODE_ENV === "development" && { error: error.message }),
     });
   }
 };
 
-// Admin endpoint to verify bank details
-export const verifyInfluencerBankDetails = async (
+// Admin endpoint to verify payment details (bank or crypto)
+export const verifyInfluencerPaymentDetails = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
-    const { influencerId, isVerified } = req.body;
+    const { influencerId, paymentType, isVerified } = req.body;
 
-    // Check if user is admin (implement your admin check logic)
-    if (!req.user || req.user.role !== 'admin') {
+    // Check if user is admin
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({
         success: false,
         message: "Access denied. Admin privileges required.",
       });
     }
 
-    if (!influencerId || typeof isVerified !== 'boolean') {
+    if (!influencerId || !paymentType || typeof isVerified !== "boolean") {
       return res.status(400).json({
         success: false,
-        message: "Influencer ID and verification status are required.",
+        message:
+          "Influencer ID, payment type, and verification status are required.",
       });
     }
+
+    if (!["bank", "crypto"].includes(paymentType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment type must be either 'bank' or 'crypto'.",
+      });
+    }
+
+    const updateField =
+      paymentType === "bank"
+        ? "bankDetails.isVerified"
+        : "cryptoDetails.isVerified";
 
     const updatedInfluencer = await Influencer.findByIdAndUpdate(
       influencerId,
       {
         $set: {
-          'bankDetails.isVerified': isVerified,
+          [updateField]: isVerified,
         },
       },
       { new: true, runValidators: true }
-    ).select('bankDetails hasBankDetails name email');
+    ).select(
+      "bankDetails hasBankDetails cryptoDetails hasCryptoDetails paymentMethod name email"
+    );
 
     if (!updatedInfluencer) {
       return res.status(404).json({
@@ -1329,18 +1411,35 @@ export const verifyInfluencerBankDetails = async (
 
     res.status(200).json({
       success: true,
-      message: `Bank details ${isVerified ? 'verified' : 'unverified'} successfully.`,
+      message: `${paymentType === "bank" ? "Bank" : "Crypto"} payment details ${
+        isVerified ? "verified" : "unverified"
+      } successfully.`,
       data: {
         influencer: updatedInfluencer,
       },
     });
-
   } catch (error: any) {
-    console.error("Verify bank details error:", error);
+    console.error("Verify payment details error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error while verifying bank details.",
+      message: "Internal server error while verifying payment details.",
       ...(process.env.NODE_ENV === "development" && { error: error.message }),
     });
   }
 };
+
+// Legacy endpoint for backward compatibility (redirects to new endpoint)
+export const updateInfluencerBankDetails = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  // Transform old request format to new format
+  req.body = {
+    paymentType: "bank",
+    ...req.body.bankDetails,
+  };
+  return updateInfluencerPaymentDetails(req, res);
+};
+
+export const getInfluencerBankDetails = getInfluencerPaymentDetails;
+export const verifyInfluencerBankDetails = verifyInfluencerPaymentDetails;

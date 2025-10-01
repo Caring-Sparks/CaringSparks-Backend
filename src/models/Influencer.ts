@@ -17,6 +17,14 @@ export interface BankDetails {
   isVerified?: boolean;
 }
 
+// Crypto wallet details interface
+export interface CryptoDetails {
+  walletAddress: string;
+  network: string;
+  walletType: string;
+  isVerified?: boolean;
+}
+
 // Main influencer interface
 export interface IInfluencer extends Document {
   name: string;
@@ -31,9 +39,12 @@ export interface IInfluencer extends Document {
   femalePercentage?: string;
   audienceProofUrl?: string; // Cloudinary URL after upload
 
-  // Bank account details
+  // Payment details
+  paymentMethod?: "bank" | "crypto";
   bankDetails?: BankDetails;
-  hasBankDetails: boolean; // Flag to check if bank details are provided
+  hasBankDetails: boolean;
+  cryptoDetails?: CryptoDetails;
+  hasCryptoDetails: boolean;
 
   // Dynamic platform data
   instagram?: PlatformData;
@@ -84,37 +95,18 @@ const validNiches = [
   "Art",
 ];
 
-// Nigerian banks list for validation
-const validBanks = [
-  "Access Bank",
-  "Citibank Nigeria",
-  "Ecobank Nigeria",
-  "Fidelity Bank",
-  "First Bank of Nigeria",
-  "First City Monument Bank",
-  "Guaranty Trust Bank",
-  "Heritage Bank",
-  "Keystone Bank",
-  "Polaris Bank",
-  "Providus Bank",
-  "Stanbic IBTC Bank",
-  "Standard Chartered Bank",
-  "Sterling Bank",
-  "Union Bank of Nigeria",
-  "United Bank for Africa",
-  "Unity Bank",
-  "Wema Bank",
-  "Zenith Bank",
-  "Jaiz Bank",
-  "SunTrust Bank",
-  "Titan Trust Bank",
-  "VFD Microfinance Bank",
-  "Moniepoint Microfinance Bank",
-  "Opay",
-  "Kuda Bank",
-  "Rubies Bank",
-  "GoMoney",
-  "V Bank",
+// Valid crypto networks
+const validCryptoNetworks = [
+  "Bitcoin (BTC)",
+  "Ethereum (ETH)",
+  "Binance Smart Chain (BSC)",
+  "Tron (TRX)",
+  "Polygon (MATIC)",
+  "Solana (SOL)",
+  "USDT (TRC20)",
+  "USDT (ERC20)",
+  "USDT (BSC)",
+  "USDC",
 ];
 
 // Mongoose schema
@@ -173,7 +165,7 @@ const InfluencerSchema: Schema = new Schema(
       type: String,
       validate: {
         validator: function (v: string) {
-          if (!v) return true; // Optional field
+          if (!v) return true;
           const num = parseFloat(v);
           return !isNaN(num) && num >= 0 && num <= 100;
         },
@@ -184,7 +176,7 @@ const InfluencerSchema: Schema = new Schema(
       type: String,
       validate: {
         validator: function (v: string) {
-          if (!v) return true; // Optional field
+          if (!v) return true;
           const num = parseFloat(v);
           return !isNaN(num) && num >= 0 && num <= 100;
         },
@@ -195,10 +187,19 @@ const InfluencerSchema: Schema = new Schema(
       type: String,
       validate: {
         validator: function (v: string) {
-          if (!v) return true; // Optional field
+          if (!v) return true;
           return v.match(/^https?:\/\/.+/);
         },
         message: "Invalid URL format for audience proof",
+      },
+    },
+
+    // Payment method selection
+    paymentMethod: {
+      type: String,
+      enum: {
+        values: ["bank", "crypto"],
+        message: "Payment method must be either 'bank' or 'crypto'",
       },
     },
 
@@ -206,17 +207,15 @@ const InfluencerSchema: Schema = new Schema(
     bankDetails: {
       bankName: {
         type: String,
-        enum: {
-          values: validBanks,
-          message: "Please select a valid Nigerian bank",
-        },
+        trim: true,
+        minlength: [2, "Bank name must be at least 2 characters"],
+        maxlength: [100, "Bank name must not exceed 100 characters"],
       },
       accountNumber: {
         type: String,
         validate: {
           validator: function (v: string) {
             if (!v) return true;
-            // Nigerian account numbers are typically 10 digits
             return /^\d{10}$/.test(v);
           },
           message: "Account number must be exactly 10 digits",
@@ -237,7 +236,37 @@ const InfluencerSchema: Schema = new Schema(
       default: false,
     },
 
-    // Dynamic platform data
+    // Crypto wallet details
+    cryptoDetails: {
+      walletAddress: {
+        type: String,
+        trim: true,
+        minlength: [26, "Wallet address must be at least 26 characters"],
+        maxlength: [200, "Wallet address must not exceed 200 characters"],
+      },
+      network: {
+        type: String,
+        enum: {
+          values: validCryptoNetworks,
+          message: "Please select a valid cryptocurrency network",
+        },
+      },
+      walletType: {
+        type: String,
+        trim: true,
+        maxlength: [50, "Wallet type must not exceed 50 characters"],
+      },
+      isVerified: {
+        type: Boolean,
+        default: false,
+      },
+    },
+    hasCryptoDetails: {
+      type: Boolean,
+      default: false,
+    },
+
+    // Dynamic platform data (keeping all existing platform schemas)
     instagram: {
       followers: {
         type: String,
@@ -536,7 +565,7 @@ const InfluencerSchema: Schema = new Schema(
       proofUrl: String,
     },
 
-    // Calculated earnings fields (from frontend)
+    // Calculated earnings fields
     followerFee: {
       type: Number,
       min: 0,
@@ -574,7 +603,7 @@ const InfluencerSchema: Schema = new Schema(
       min: 0,
     },
 
-    // Legacy fields (keeping for backward compatibility)
+    // Legacy fields
     amountPerPost: {
       type: String,
     },
@@ -603,7 +632,7 @@ const InfluencerSchema: Schema = new Schema(
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt automatically
+    timestamps: true,
   }
 );
 
