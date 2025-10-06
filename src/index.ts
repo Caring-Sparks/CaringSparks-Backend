@@ -15,10 +15,11 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Middlewares
+
+//CORS
 const allowedOrigins = [
   "http://localhost:3000",
-  "http://localhost:3001",
   "https://caring-sparks.vercel.app",
 ];
 

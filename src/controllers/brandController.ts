@@ -1,4 +1,5 @@
-// controllers/brandController.ts
+//This controller houses all the brand associated APIs
+
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -17,9 +18,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Configure multer with memory storage
 const storage = multer.memoryStorage();
-
+// cloudinary upload config
 export const upload = multer({
   storage: storage,
   limits: {
@@ -46,7 +46,6 @@ export const uploadCampaignMaterials = async (req: Request, res: Response) => {
       });
     }
 
-    // Find the campaign
     const campaign = await Campaign.findById(campaignId);
     if (!campaign) {
       return res.status(404).json({
@@ -64,37 +63,22 @@ export const uploadCampaignMaterials = async (req: Request, res: Response) => {
       });
     }
 
-    console.log("[v0] Request body:", req.body);
-    console.log("[v0] Files received:", files.length);
-
     let materialsData: Array<{ description: string }> = [];
 
-    // Check if materials data is sent as JSON array
     if (req.body.materials && Array.isArray(req.body.materials)) {
-      console.log("[v0] Found materials as JSON array:", req.body.materials);
       materialsData = req.body.materials.map((material: any) => ({
         description: material.description || "",
       }));
     } else {
-      // Fallback to parsing individual form fields
       Object.keys(req.body).forEach((key) => {
-        console.log("[v0] Processing key:", key, "value:", req.body[key]);
         const match = key.match(/materials\[(\d+)\]\[description\]/);
         if (match) {
           const index = Number.parseInt(match[1]);
           materialsData[index] = { description: req.body[key] };
-          console.log(
-            "[v0] Found description at index",
-            index,
-            ":",
-            req.body[key]
-          );
         }
       });
     }
-
-    console.log("[v0] Parsed materials data:", materialsData);
-
+    //upload to cloudinary first
     const uploadPromises = files.map((file, index) => {
       return new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -110,7 +94,6 @@ export const uploadCampaignMaterials = async (req: Request, res: Response) => {
               reject(error);
             } else {
               const description = materialsData[index]?.description || "";
-              console.log("[v0] Material", index, "description:", description);
               resolve({
                 imageUrl: result?.secure_url,
                 postDescription: description,
@@ -122,11 +105,9 @@ export const uploadCampaignMaterials = async (req: Request, res: Response) => {
       });
     });
 
-    // Wait for all uploads to complete
+    // Wait for all uploads to complete then save
     const campaignMaterials: any = await Promise.all(uploadPromises);
-    console.log("[v0] Final campaign materials:", campaignMaterials);
 
-    // Update campaign with new materials
     campaign.campaignMaterials.push(...campaignMaterials);
     await campaign.save();
 
@@ -230,7 +211,7 @@ export const deleteCampaignMaterial = async (req: Request, res: Response) => {
 
     const material = campaign.campaignMaterials[materialIndex];
 
-    // Delete from Cloudinary
+    // Delete from Cloudinary as well
     try {
       const publicId = material.imageUrl.split("/").pop()?.split(".")[0];
       if (publicId) {
@@ -238,7 +219,6 @@ export const deleteCampaignMaterial = async (req: Request, res: Response) => {
       }
     } catch (cloudinaryError) {
       console.error("Error deleting from Cloudinary:", cloudinaryError);
-      // Continue with database deletion even if Cloudinary deletion fails
     }
 
     // Remove from database
@@ -266,6 +246,7 @@ export const deleteCampaignMaterial = async (req: Request, res: Response) => {
   }
 };
 
+// create a new brand
 export const createBrand = async (req: Request, res: Response) => {
   try {
     const { email, influencersMin, influencersMax, brandPhone } = req.body;
@@ -282,6 +263,7 @@ export const createBrand = async (req: Request, res: Response) => {
       "location",
     ];
 
+    // Further validation
     const missingFields = requiredFields.filter((field) => !req.body[field]);
 
     if (missingFields.length > 0) {
@@ -352,14 +334,13 @@ export const createBrand = async (req: Request, res: Response) => {
       });
     }
 
-    // Generate password
+    // Generate the random password
     const plainPassword = crypto
       .randomBytes(12)
       .toString("base64")
       .slice(0, 12);
     const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
-    // --- STEP 1: Create Brand (main model) ---
     const brand = new Brand({
       role: req.body.role,
       platforms: req.body.platforms,
@@ -412,10 +393,9 @@ export const createBrand = async (req: Request, res: Response) => {
 
     await campaign.save();
 
-    // --- STEP 3: Send Email ---
+    // Send the Email
     await sendBrandEmail(email, plainPassword, brandName);
 
-    // Response
     const { password, ...brandData } = brand.toObject();
     res.status(201).json({
       success: true,
@@ -473,9 +453,8 @@ export const getAllBrands = async (req: Request, res: Response) => {
       filter.location = { $regex: req.query.location, $options: "i" };
     }
 
-    // Execute query with pagination
     const brands = await Brand.find(filter)
-      .select("-password") // Exclude password field
+      .select("-password")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -769,7 +748,6 @@ export const updateBrandDetails = async (req: Request, res: Response) => {
 };
 
 // Delete brand
-
 export const deleteBrand = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -804,7 +782,6 @@ export const deleteBrand = async (req: Request, res: Response) => {
           await Campaign.deleteMany({ userId: id }, { session });
         }
 
-        // Then delete the brand
         await Brand.findByIdAndDelete(id, { session });
       });
 
@@ -837,7 +814,6 @@ export const deleteBrand = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Delete brand error:", error);
 
-    // Handle specific MongoDB errors
     if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
@@ -845,7 +821,6 @@ export const deleteBrand = async (req: Request, res: Response) => {
       });
     }
 
-    // Handle transaction errors
     if (error.name === "MongoServerError" && error.code === 11000) {
       return res.status(500).json({
         success: false,
@@ -861,14 +836,14 @@ export const deleteBrand = async (req: Request, res: Response) => {
   }
 };
 
-// Get brand statistics/dashboard data
+// Get brand statistics/dashboard data(pending usage)
 export const getBrandStats = async (req: Request, res: Response) => {
   try {
     const totalBrands = await Brand.countDocuments();
     const paidBrands = await Brand.countDocuments({ hasPaid: true });
     const validatedBrands = await Brand.countDocuments({ isValidated: true });
     const recentBrands = await Brand.countDocuments({
-      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }, // Last 30 days
+      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
     });
 
     // Platform distribution

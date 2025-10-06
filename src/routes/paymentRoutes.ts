@@ -3,7 +3,6 @@ import { getPaymentStatus, verifyPayment } from "../controllers/paymentControlle
 
 const router = express.Router();
 
-// Existing routes
 router.post("/api/verify-payment", verifyPayment);
 router.get("/api/get-status", getPaymentStatus);
 

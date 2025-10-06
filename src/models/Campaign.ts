@@ -28,7 +28,6 @@ export interface ICampaignMaterial {
 }
 
 export interface ICampaign extends Document {
-  // User reference
   userId: mongoose.Types.ObjectId;
 
   // Basic brand information
@@ -46,11 +45,7 @@ export interface ICampaign extends Document {
   additionalLocations?: string[];
   postFrequency?: string;
   postDuration?: string;
-
-  // Campaign materials
   campaignMaterials: ICampaignMaterial[];
-
-  // Enhanced assigned influencers management
   assignedInfluencers: IAssignedInfluencer[];
 
   // Calculated pricing fields
@@ -174,14 +169,11 @@ const CampaignMaterialSchema: Schema = new Schema(
 
 const CampaignSchema: Schema = new Schema(
   {
-    // User reference
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Brand",
       required: [true, "User ID is required"],
     },
-
-    // Basic brand information
     role: {
       type: String,
       required: [true, "Role is required"],
@@ -224,8 +216,6 @@ const CampaignSchema: Schema = new Schema(
       required: [true, "Phone number is required"],
       trim: true,
     },
-
-    // Campaign requirements
     influencersMin: {
       type: Number,
       required: [true, "Minimum influencers is required"],
@@ -264,20 +254,14 @@ const CampaignSchema: Schema = new Schema(
       enum: ["", "1 day", "1 week", "2 weeks", "1 month"],
       default: "",
     },
-
-    // Campaign materials field
     campaignMaterials: {
       type: [CampaignMaterialSchema],
       default: [],
     },
-
-    // Enhanced assigned influencers with detailed tracking
     assignedInfluencers: {
       type: [AssignedInfluencerSchema],
       default: [],
     },
-
-    // Calculated pricing fields
     avgInfluencers: {
       type: Number,
       min: [0, "Average influencers cannot be negative"],
@@ -308,8 +292,6 @@ const CampaignSchema: Schema = new Schema(
       min: [0, "Total cost cannot be negative"],
       default: 0,
     },
-
-    // Payment fields
     hasPaid: {
       type: Boolean,
       default: false,
@@ -320,8 +302,6 @@ const CampaignSchema: Schema = new Schema(
     paymentDate: {
       type: String,
     },
-
-    // Detailed payment information
     paymentDetails: {
       flutterwaveTransactionId: {
         type: Number,
@@ -352,8 +332,6 @@ const CampaignSchema: Schema = new Schema(
         type: Date,
       },
     },
-
-    // System fields
     isValidated: {
       type: Boolean,
       default: false,
@@ -369,7 +347,6 @@ const CampaignSchema: Schema = new Schema(
   }
 );
 
-// Indexes for better performance
 CampaignSchema.index({ userId: 1 });
 CampaignSchema.index({ email: 1 });
 CampaignSchema.index({ createdAt: -1 });

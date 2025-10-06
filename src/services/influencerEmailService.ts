@@ -9,17 +9,21 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const loginUrl = "https://caring-sparks.vercel.app";
+const logoUrl = `${loginUrl}/Logo.png`;
+  const companyName = "The•PR•God";
+
 export const sendInfluencerWelcomeEmail = async (
   influencer: IInfluencer,
   plainPassword: string
 ) => {
-  const companyName = "CaringSparks";
-  const loginUrl = "https://caring-sparks.vercel.app/";
+  const companyName = "The•PR•God";
+  const loginUrl = "https://caring-sparks.vercel.app";
 
   const mailOptions = {
-    from: `"CaringSparks - Influencer Program" <${process.env.EMAIL_USER}>`,
+    from: `"The•PR•God - Influencer Program" <${process.env.EMAIL_USER}>`,
     to: influencer.email,
-    subject: "Welcome to CaringSparks Influencer Program!",
+    subject: "Welcome to The•PR•God Influencer Program!",
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -322,8 +326,8 @@ export const sendInfluencerWelcomeEmail = async (
   <div class="email-container">
     <!-- Header -->
     <div class="header">
-      <div class="logo">🌟</div>
-      <h1 class="welcome-title">Welcome to CaringSparks!</h1>
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
+      <h1 class="welcome-title">Welcome to The•PR•God!</h1>
     </div>
     
     <!-- Content -->
@@ -605,12 +609,12 @@ export const sendInfluencerWelcomeEmail = async (
       
       <div class="footer-links">
         <a href="${loginUrl}">Login</a>
-        <a href="mailto:support@caringsparks.com">Support</a>
-        <a href="https://caringsparks.com/privacy">Privacy Policy</a>
+        <a href="mailto:theprcompanydigital@gmail.com">Support</a>
+        <a href="https://caring-sparks.vercel.app/">Privacy Policy</a>
       </div>
       
       <p class="footer-text">
-        © ${new Date().getFullYear()} CaringSparks. All rights reserved.  
+        © ${new Date().getFullYear()} The•PR•God. All rights reserved.  
       </p>
     </div>
   </div>
@@ -624,9 +628,9 @@ export const sendInfluencerWelcomeEmail = async (
 
 export const sendAdminNotificationEmail = async (influencer: IInfluencer) => {
   const mailOptions = {
-    from: `"CaringSparks System" <${process.env.EMAIL_USER}>`,
+    from: `"The•PR•God System" <${process.env.EMAIL_USER}>`,
     to: process.env.EMAIL_USER,
-    subject: "🌟 New Influencer Application - CaringSparks",
+    subject: "New Influencer Application - The•PR•God",
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -930,7 +934,7 @@ export const sendAdminNotificationEmail = async (influencer: IInfluencer) => {
 <body>
   <div class="email-container">
     <div class="header">
-      <div class="logo">🌟</div>
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
       <h1>New Influencer Application</h1>
     </div>
     
@@ -939,7 +943,7 @@ export const sendAdminNotificationEmail = async (influencer: IInfluencer) => {
         📋 Action Required: New Application Review
       </div>
       
-      <p>A new influencer has submitted an application to join the CaringSparks platform. Please review the details below and update their status accordingly.</p>
+      <p>A new influencer has submitted an application to join the The•PR•God platform. Please review the details below and update their status accordingly.</p>
       
       <!-- Contact Information -->
       <div class="info-card">
@@ -1340,13 +1344,13 @@ export const sendAdminNotificationEmail = async (influencer: IInfluencer) => {
       </div>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280; text-align: center;">
-        This is an automated notification from the CaringSparks influencer application system.
+        This is an automated notification from the The•PR•God influencer application system.
       </p>
     </div>
     
     <div class="footer">
-      <p class="footer-text"><strong>CaringSparks Admin Notifications</strong></p>
-      <p class="footer-text">© ${new Date().getFullYear()} CaringSparks. All rights reserved.</p>
+      <p class="footer-text"><strong>The•PR•God Admin Notifications</strong></p>
+      <p class="footer-text">© ${new Date().getFullYear()} The•PR•God. All rights reserved.</p>
     </div>
   </div>
 </body>
@@ -1363,9 +1367,9 @@ export const sendInfluencerStatusEmail = async (
   status: "approved" | "rejected",
   rejectionReason?: string
 ) => {
-  const companyName = "CaringSparks";
-  const loginUrl = "https://caring-sparks.vercel.app/";
-  const supportEmail = "support@caringsparks.com";
+  const companyName = "The•PR•God";
+  const loginUrl = "https://caring-sparks.vercel.app";
+  const supportEmail = "theprcompanydigital@gmail.com";
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -1386,17 +1390,17 @@ export const sendInfluencerStatusEmail = async (
     : "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
 
   const subject = isApproved
-    ? `🎉 Welcome to CaringSparks, ${influencerName}! Your Application is Approved`
-    : `📋 Update on Your CaringSparks Application`;
+    ? `Welcome to The•PR•God, ${influencerName}! Your Application is Approved`
+    : `Update on Your The•PR•God Application`;
 
   const mainMessage = isApproved
     ? `Congratulations <strong>${influencerName}</strong>! Your influencer application has been approved. 
        We're excited to welcome you to our platform and can't wait to see the amazing campaigns you'll create with our brand partners.`
-    : `Thank you for your interest in joining CaringSparks, <strong>${influencerName}</strong>. 
+    : `Thank you for your interest in joining The•PR•God, <strong>${influencerName}</strong>. 
        After careful review, we're unable to approve your application at this time.`;
 
   const influencerMailOptions = {
-    from: `"CaringSparks Team" <${process.env.EMAIL_USER}>`,
+    from: `"The•PR•God Team" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html: `<!DOCTYPE html>
@@ -1648,9 +1652,9 @@ export const sendInfluencerStatusEmail = async (
   <div class="email-container">
     <!-- Header -->
     <div class="header">
-      <div class="logo">${statusEmoji}</div>
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
       <h1 class="welcome-title">${
-        isApproved ? "Welcome to CaringSparks!" : "Application Update"
+        isApproved ? "Welcome to The•PR•God!" : "Application Update"
       }</h1>
     </div>
     
@@ -1672,7 +1676,7 @@ export const sendInfluencerStatusEmail = async (
         <div class="status-message">
           ${
             isApproved
-              ? `You're now part of the CaringSparks influencer community! Your profile is live and brands can start connecting with you for exciting collaboration opportunities.`
+              ? `You're now part of the The•PR•God influencer community! Your profile is live and brands can start connecting with you for exciting collaboration opportunities.`
               : `We appreciate the time you took to apply. While we can't move forward with your application right now, we encourage you to keep building your online presence.`
           }
         </div>
@@ -1743,7 +1747,7 @@ export const sendInfluencerStatusEmail = async (
         ${
           isApproved
             ? "We're here to support your success. Reach out anytime if you need help!"
-            : "Thank you for your interest in CaringSparks. We wish you all the best!"
+            : "Thank you for your interest in The•PR•God. We wish you all the best!"
         }
       </p>
     </div>
@@ -1751,7 +1755,7 @@ export const sendInfluencerStatusEmail = async (
     <!-- Footer -->
     <div class="footer">
       <p class="footer-text">
-        This email was sent to ${to} regarding your influencer application on CaringSparks.
+        This email was sent to ${to} regarding your influencer application on The•PR•God.
       </p>
       
       <div class="footer-links">
@@ -1761,7 +1765,7 @@ export const sendInfluencerStatusEmail = async (
       </div>
       
       <p class="footer-text">
-        © ${new Date().getFullYear()} CaringSparks. All rights reserved.  
+        © ${new Date().getFullYear()} The•PR•God. All rights reserved.  
       </p>
     </div>
   </div>

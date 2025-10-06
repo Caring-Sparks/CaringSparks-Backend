@@ -13,6 +13,7 @@ import {
 import { sendOnboardingEmail } from "../services/adminOnboarding";
 import Campaign from "../models/Campaign";
 
+//generate a token
 export const generateToken = (
   userId: string,
   role: string,
@@ -21,10 +22,11 @@ export const generateToken = (
   return jwt.sign(
     { id: userId, role, email },
     process.env.JWT_SECRET as string,
-    { expiresIn: "1h" } //change to 7 days upon deployment
+    { expiresIn: "1h" }
   );
 };
 
+//refresh token if needed
 export const generateRefreshToken = (
   userId: string,
   role: string,
@@ -37,11 +39,12 @@ export const generateRefreshToken = (
   );
 };
 
+//login verified users
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password, role } = req.body;
 
-    // Input validation
+    //validations
     if (!email || !password || !role) {
       return res.status(400).json({
         success: false,
@@ -49,7 +52,7 @@ export const loginUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Email format validation
+    // Email regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -115,7 +118,7 @@ export const loginUser = async (req: Request, res: Response) => {
     const token = generateToken(user._id.toString(), role, email);
     const refreshToken = generateRefreshToken(user._id.toString(), role, email);
 
-    // Set refresh token as httpOnly cookie
+    // Set refresh token
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -129,7 +132,6 @@ export const loginUser = async (req: Request, res: Response) => {
         user: {
           _id: user._id,
           role,
-          // Include additional user info based on role if needed
           ...(role === "influencer" && { status: user.status }),
           ...(role === "brand" && { companyName: user.companyName }),
           ...(role === "admin" && { permissions: user.permissions }),
@@ -142,56 +144,6 @@ export const loginUser = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Server error occurred",
-    });
-  }
-};
-
-export const createAdmin = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
-
-    // Generate secure password
-    const plainPassword = crypto
-      .randomBytes(12)
-      .toString("base64")
-      .slice(0, 12);
-    const hashedPassword = await bcrypt.hash(plainPassword, 12);
-
-    const admin = new Admin({
-      email: email.toLowerCase(),
-      password: hashedPassword,
-    });
-
-    await admin.save();
-
-    await sendOnboardingEmail(email, plainPassword);
-
-    res.status(201).json({
-      success: true,
-      message: "Admin registered successfully. Login details sent to email.",
-    });
-  } catch (error: any) {
-    console.error("Admin registration error:", error);
-
-    // Handle specific MongoDB errors
-    if (error.name === "ValidationError") {
-      return res.status(400).json({
-        success: false,
-        message: "Validation error",
-        errors: Object.values(error.errors).map((err: any) => err.message),
-      });
-    }
-
-    if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: "An admin with this email already exists",
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: "Internal server error occurred",
     });
   }
 };
@@ -247,7 +199,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       user.email
     );
 
-    // Set new refresh token as httpOnly cookie
+    // Set new refresh token
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -270,10 +222,10 @@ export const refreshToken = async (req: Request, res: Response) => {
   }
 };
 
-// Logout
+//Logout
 export const logout = async (req: Request, res: Response) => {
   try {
-    // Clear refresh token cookie
+    // Clear refresh token
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -293,7 +245,7 @@ export const logout = async (req: Request, res: Response) => {
   }
 };
 
-// Get current user profile
+//Get current user profile
 export const getCurrentUser = async (req: Request, res: Response) => {
   try {
     const authHeader = req.headers.authorization;
@@ -371,11 +323,12 @@ export const getCurrentUser = async (req: Request, res: Response) => {
   }
 };
 
-// Forgot password
+//Forgot password
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { email, role } = req.body;
 
+    //validations
     if (!email || !role) {
       return res.status(400).json({
         success: false,
@@ -409,7 +362,6 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const user = await model.findOne({ email: email.toLowerCase() }).exec();
 
     if (!user) {
-      // For security, don't reveal if email exists
       return res.status(200).json({
         success: true,
         message:
@@ -419,9 +371,8 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Save reset token to user
     await user.updateOne({
       passwordResetToken: resetToken,
       passwordResetExpires: resetTokenExpiry,
@@ -457,7 +408,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 };
 
-// Reset password
+//Reset password
 export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { token, newPassword, role } = req.body;
@@ -537,7 +488,7 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-// Change password (for authenticated users)
+//Change password (for authenticated users)
 export const changePassword = async (req: Request, res: Response) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -606,7 +557,7 @@ export const changePassword = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if new password is different from current
+    // Check if new password is different
     const isSamePassword = await bcrypt.compare(newPassword, user.password);
     if (isSamePassword) {
       return res.status(400).json({
@@ -615,10 +566,8 @@ export const changePassword = async (req: Request, res: Response) => {
       });
     }
 
-    // Hash new password
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
 
-    // Update password
     await user.updateOne({ password: hashedNewPassword });
 
     res.status(200).json({
@@ -649,7 +598,7 @@ export const changePassword = async (req: Request, res: Response) => {
   }
 };
 
-// Verify email token (if you have email verification)
+//Verify email token (if you have email verification)
 export const verifyEmail = async (req: Request, res: Response) => {
   try {
     const { token, role } = req.body;
@@ -707,11 +656,11 @@ export const verifyEmail = async (req: Request, res: Response) => {
   }
 };
 
+//update user profile
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     const { brandName, email, brandPhone, role } = req.body;
 
-    // Get token from authorization header
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -724,7 +673,7 @@ export const updateProfile = async (req: Request, res: Response) => {
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
 
-    // Input validation
+    //validations
     if (email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
@@ -735,7 +684,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       }
     }
 
-    // Role validation
+    //Role validation
     if (role) {
       const validRoles = [
         "Brand",
@@ -762,7 +711,7 @@ export const updateProfile = async (req: Request, res: Response) => {
     let user: any = null;
     let userRole = "";
 
-    // Find user based on token role
+    // Find user based on the role from the token
     for (const { model, role: r } of userModels) {
       if (decoded.role === r) {
         const foundUser = await model.findById(decoded.id).exec();
@@ -781,10 +730,8 @@ export const updateProfile = async (req: Request, res: Response) => {
       });
     }
 
-    // Store old email for campaign update
     const oldEmail = user.email;
 
-    // Check if email is being changed and if it already exists
     if (email && email.toLowerCase() !== user.email.toLowerCase()) {
       const existingUser = await user.constructor
         .findOne({
@@ -801,7 +748,6 @@ export const updateProfile = async (req: Request, res: Response) => {
       }
     }
 
-    // Prepare update object - only include fields that are provided
     const updateData: any = {};
 
     if (brandName !== undefined) updateData.brandName = brandName;
@@ -809,7 +755,6 @@ export const updateProfile = async (req: Request, res: Response) => {
     if (brandPhone !== undefined) updateData.brandPhone = brandPhone;
     if (role !== undefined) updateData.role = role;
 
-    // Add updatedAt timestamp
     updateData.updatedAt = new Date();
 
     // Update user
@@ -830,7 +775,6 @@ export const updateProfile = async (req: Request, res: Response) => {
 
     if (email && email.toLowerCase() !== oldEmail.toLowerCase()) {
       try {
-        // Use userId instead of email for more reliable updates
         const campaignUpdateResult = await Campaign.updateMany(
           { userId: user._id },
           {
@@ -846,7 +790,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       }
     }
 
-    // UPDATE CAMPAIGNS COLLECTION IF BRAND NAME CHANGED
+    //update the campaign collection if the brand name changed
     if (brandName !== undefined && userRole === "brand") {
       try {
         const campaignUpdateResult = await Campaign.updateMany(
@@ -864,7 +808,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       }
     }
 
-    // UPDATE CAMPAIGNS COLLECTION IF BRAND PHONE CHANGED
+    //update the campaign collection if the phone number changed
     if (brandPhone !== undefined && userRole === "brand") {
       try {
         const campaignUpdateResult = await Campaign.updateMany(
@@ -931,9 +875,9 @@ export const updateProfile = async (req: Request, res: Response) => {
   }
 };
 
+//delete user account
 export const deleteAccount = async (req: Request, res: Response) => {
   try {
-    // Get token from authorization header
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -955,7 +899,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
     let user: any = null;
     let userModel: Model<any> | null = null;
 
-    // Find user based on token role
+    // Find user based on the role from the token
     for (const { model, role: r } of userModels) {
       if (decoded.role === r) {
         const foundUser = await model.findById(decoded.id).exec();
@@ -974,16 +918,11 @@ export const deleteAccount = async (req: Request, res: Response) => {
       });
     }
 
-    // If this is a brand, also delete all their campaigns
+    // If this it is a brand. delete all their campiagns
     if (decoded.role === "brand") {
-      // You'll need to import your Campaign model
       await Campaign.deleteMany({ email: user.email });
-
-      // For now, we'll just note this in the response
-      console.log(`Would delete campaigns for brand: ${user.email}`);
     }
 
-    // Delete the user account
     await userModel.findByIdAndDelete(user._id);
 
     // Clear any cookies if they exist

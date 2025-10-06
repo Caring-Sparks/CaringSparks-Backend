@@ -1,4 +1,3 @@
-// models/Influencer.ts
 import mongoose, { Schema, type Document } from "mongoose";
 
 // Social media platform data interface
@@ -6,7 +5,7 @@ export interface PlatformData {
   followers: string;
   url: string;
   impressions: string;
-  proofUrl?: string; // Cloudinary URL after upload
+  proofUrl?: string;
 }
 
 // Bank account details interface
@@ -37,7 +36,7 @@ export interface IInfluencer extends Document {
   audienceLocation?: string;
   malePercentage?: string;
   femalePercentage?: string;
-  audienceProofUrl?: string; // Cloudinary URL after upload
+  audienceProofUrl?: string;
 
   // Payment details
   paymentMethod?: "bank" | "crypto";
@@ -193,8 +192,6 @@ const InfluencerSchema: Schema = new Schema(
         message: "Invalid URL format for audience proof",
       },
     },
-
-    // Payment method selection
     paymentMethod: {
       type: String,
       enum: {
@@ -235,8 +232,6 @@ const InfluencerSchema: Schema = new Schema(
       type: Boolean,
       default: false,
     },
-
-    // Crypto wallet details
     cryptoDetails: {
       walletAddress: {
         type: String,
@@ -265,8 +260,6 @@ const InfluencerSchema: Schema = new Schema(
       type: Boolean,
       default: false,
     },
-
-    // Dynamic platform data (keeping all existing platform schemas)
     instagram: {
       followers: {
         type: String,
@@ -564,8 +557,6 @@ const InfluencerSchema: Schema = new Schema(
       },
       proofUrl: String,
     },
-
-    // Calculated earnings fields
     followerFee: {
       type: Number,
       min: 0,
@@ -602,16 +593,12 @@ const InfluencerSchema: Schema = new Schema(
       type: Number,
       min: 0,
     },
-
-    // Legacy fields
     amountPerPost: {
       type: String,
     },
     amountPerMonth: {
       type: String,
     },
-
-    // Metadata
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],

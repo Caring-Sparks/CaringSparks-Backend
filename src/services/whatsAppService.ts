@@ -1,4 +1,3 @@
-// whatsappService.ts
 import twilio from "twilio";
 
 interface WhatsAppMessage {
@@ -43,9 +42,6 @@ const formatPhoneNumber = (phoneNumber: string) => {
     : `whatsapp:${phoneNumber}`;
 };
 
-/**
- * Send a WhatsApp message
- */
 export const sendWhatsAppMessage = async (
   to: string,
   body: string,
@@ -81,9 +77,6 @@ export const sendWhatsAppMessage = async (
   }
 };
 
-/**
- * Send WhatsApp message with template
- */
 export const sendTemplateMessage = async (
   to: string,
   contentSid: string,
@@ -119,9 +112,6 @@ export const sendTemplateMessage = async (
   }
 };
 
-/**
- * Send bulk WhatsApp messages
- */
 export const sendBulkWhatsAppMessages = async (
   messages: WhatsAppMessage[]
 ): Promise<WhatsAppResponse[]> => {
@@ -141,9 +131,6 @@ export const sendBulkWhatsAppMessages = async (
   });
 };
 
-/**
- * Get message status
- */
 export const getWhatsAppMessageStatus = async (messageId: string) => {
   try {
     const client = getTwilioClient();
@@ -163,13 +150,6 @@ export const getWhatsAppMessageStatus = async (messageId: string) => {
   }
 };
 
-// ============================================
-// CAMPAIGN-SPECIFIC WHATSAPP FUNCTIONS
-// ============================================
-
-/**
- * Send campaign assignment WhatsApp notification to influencer
- */
 export const sendCampaignAssignmentWhatsApp = async (
   phoneNumber: string,
   influencerName: string,
@@ -190,9 +170,6 @@ Thank you for being part of CaringSparks! 🌟`;
   return await sendWhatsAppMessage(phoneNumber, message);
 };
 
-/**
- * Send campaign response notification to brand
- */
 export const sendCampaignResponseWhatsApp = async (
   phoneNumber: string,
   brandName: string,
@@ -225,9 +202,6 @@ Check your dashboard for more details.`;
   return await sendWhatsAppMessage(phoneNumber, message);
 };
 
-/**
- * Send deliverables submission notification to brand
- */
 export const sendDeliverablesSubmissionWhatsApp = async (
   phoneNumber: string,
   brandName: string,

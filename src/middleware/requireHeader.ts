@@ -1,7 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-// Extend Request interface to include user
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
@@ -18,7 +17,7 @@ export const authenticateToken = (
   next: NextFunction
 ) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
     return res.status(401).json({
@@ -78,7 +77,7 @@ export const requireAdmin = (
   next();
 };
 
-// Optional: Check if user owns the resource or is admin
+// Check if user owns the resource or is admin
 export const requireOwnershipOrAdmin = (
   req: AuthenticatedRequest,
   res: Response,

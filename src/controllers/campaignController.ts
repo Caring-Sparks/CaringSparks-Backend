@@ -1,3 +1,5 @@
+// This controller houses the API endpoints for the campigns associated with brands
+
 import { Request, Response } from "express";
 import Campaign from "../models/Campaign";
 import Brand from "../models/Brand";
@@ -19,7 +21,6 @@ import {
   sendCampaignResponseWhatsApp,
 } from "../services/whatsAppService";
 
-// Interface to extend Request with user data
 interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
@@ -28,15 +29,16 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-// Helper function to convert Mongoose document to plain object with proper typing
+// Helper function to convert Mongoose document to plain object
 const convertCampaignForEmail = (campaignDoc: any) => {
   const campaign = campaignDoc.toObject ? campaignDoc.toObject() : campaignDoc;
   return {
     ...campaign,
-    _id: campaign._id.toString(), // Ensure _id is a string
+    _id: campaign._id.toString(),
   };
 };
 
+// nodemailer transporter
 const createTransporter = () => {
   return nodemailer.createTransport({
     service: "gmail",
@@ -55,7 +57,6 @@ export const createCampaign = async (
   res: Response
 ) => {
   try {
-    // Extract user from authentication
     let authenticatedUser = null;
 
     const authHeader = req.headers.authorization;
@@ -104,12 +105,11 @@ export const createCampaign = async (
       });
     }
 
-    // Get email from JWT or fetch from database
     let userEmail = authenticatedUser.email || authenticatedUser.user?.email;
 
     if (!userEmail) {
       try {
-        const User = require("../models/User"); // Import your User model
+        const User = require("../models/User");
         const userFromDB = await User.findById(userId).select("email");
         if (!userFromDB) {
           return res.status(404).json({
@@ -135,7 +135,6 @@ export const createCampaign = async (
       });
     }
 
-    // Extract other fields from request body
     const {
       role,
       platforms,
@@ -182,7 +181,6 @@ export const createCampaign = async (
       });
     }
 
-    // Validate platforms array
     if (!Array.isArray(platforms) || platforms.length === 0) {
       return res.status(400).json({
         success: false,
@@ -190,7 +188,6 @@ export const createCampaign = async (
       });
     }
 
-    // Rest of your validation logic...
     const validPlatforms = [
       "Instagram",
       "X",
@@ -233,7 +230,7 @@ export const createCampaign = async (
       });
     }
 
-    // Prepare campaign data
+    // Prepare the campaign data
     const campaignData = {
       userId: new mongoose.Types.ObjectId(userId),
       role: String(role).trim(),
@@ -262,12 +259,10 @@ export const createCampaign = async (
       isValidated: Boolean(isValidated) || false,
     };
 
-    // Create and save campaign
     const campaign = new Campaign(campaignData);
     const savedCampaign = await campaign.save();
 
     try {
-      // Convert campaign document for email service
       const campaignForEmail = convertCampaignForEmail(savedCampaign);
 
       const emailResults = await sendCampaignEmails(
@@ -301,7 +296,6 @@ export const createCampaign = async (
   } catch (error: any) {
     console.error("Campaign creation error:", error);
 
-    // Handle Mongoose validation errors
     if (error instanceof mongoose.Error.ValidationError) {
       const validationErrors = Object.keys(error.errors).map((field) => ({
         field,
@@ -316,7 +310,6 @@ export const createCampaign = async (
       });
     }
 
-    // Handle duplicate key errors - MODIFIED TO ALLOW DUPLICATES
     if (error.code === 11000) {
       console.error(
         "Duplicate key error (this should not happen for email):",
@@ -329,8 +322,6 @@ export const createCampaign = async (
           "Email duplicate detected - this should be allowed. Attempting workaround..."
         );
 
-        // Try to save again without the problematic field validation
-        // This is a temporary workaround - ideally you should remove the unique constraint
         return res.status(500).json({
           success: false,
           message:
@@ -341,7 +332,6 @@ export const createCampaign = async (
         });
       }
 
-      // For other duplicate key errors
       const duplicateField = Object.keys(error.keyPattern || {})[0];
       return res.status(409).json({
         success: false,
@@ -350,7 +340,6 @@ export const createCampaign = async (
       });
     }
 
-    // Handle cast errors (invalid ObjectId, etc.)
     if (error instanceof mongoose.Error.CastError) {
       return res.status(400).json({
         success: false,
@@ -369,13 +358,12 @@ export const createCampaign = async (
   }
 };
 
-// Get campaigns by user (using authenticated user)
+// Get campaigns by user (for authenticated users only)
 export const getUserCampaigns = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
-    // Extract user from authentication (same pattern as createCampaign)
     let authenticatedUser = null;
 
     const authHeader = req.headers.authorization;
@@ -430,7 +418,6 @@ export const getAllCampaigns = async (req: Request, res: Response) => {
       limit = 10,
     } = req.query;
 
-    // Build filter object
     const filter: any = {};
 
     if (role) filter.role = role;
@@ -475,7 +462,6 @@ export const getCampaignById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -505,7 +491,6 @@ export const updateCampaign = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -513,7 +498,7 @@ export const updateCampaign = async (req: Request, res: Response) => {
       });
     }
 
-    // Validate influencer range if both values are provided
+    // Validate influencer range
     if (req.body.influencersMin && req.body.influencersMax) {
       if (Number(req.body.influencersMin) > Number(req.body.influencersMax)) {
         return res.status(400).json({
@@ -523,7 +508,6 @@ export const updateCampaign = async (req: Request, res: Response) => {
       }
     }
 
-    // Validate platforms if provided
     if (req.body.platforms) {
       if (
         !Array.isArray(req.body.platforms) ||
@@ -536,7 +520,6 @@ export const updateCampaign = async (req: Request, res: Response) => {
       }
     }
 
-    // Get the old campaign data to compare status changes
     const oldCampaign = await Campaign.findById(id);
 
     if (!oldCampaign) {
@@ -551,7 +534,6 @@ export const updateCampaign = async (req: Request, res: Response) => {
       runValidators: true,
     });
 
-    // Check if status changed to approved or rejected and send email
     if (
       req.body.status &&
       req.body.status !== oldCampaign.status &&
@@ -567,7 +549,6 @@ export const updateCampaign = async (req: Request, res: Response) => {
         );
       } catch (emailError) {
         console.error("Failed to send campaign status email:", emailError);
-        // Don't fail the request if email fails, but log it
       }
     }
 
@@ -727,7 +708,6 @@ export const assignInfluencersToCampaign = async (
     const { id } = req.params;
     const { influencerIds } = req.body;
 
-    // Validate campaign ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -735,7 +715,6 @@ export const assignInfluencersToCampaign = async (
       });
     }
 
-    // Validate influencer IDs
     if (!Array.isArray(influencerIds) || influencerIds.length === 0) {
       return res.status(400).json({
         success: false,
@@ -743,7 +722,6 @@ export const assignInfluencersToCampaign = async (
       });
     }
 
-    // Validate each influencer ID format
     for (const influencerId of influencerIds) {
       if (!mongoose.Types.ObjectId.isValid(influencerId)) {
         return res.status(400).json({
@@ -753,7 +731,6 @@ export const assignInfluencersToCampaign = async (
       }
     }
 
-    // Get the campaign
     const campaign = await Campaign.findById(id);
     if (!campaign) {
       return res.status(404).json({
@@ -762,10 +739,8 @@ export const assignInfluencersToCampaign = async (
       });
     }
 
-    // Remove duplicates from input
     const uniqueInfluencerIds = [...new Set(influencerIds)];
 
-    // Get currently assigned influencer IDs to avoid duplicates
     const currentlyAssignedIds = campaign.assignedInfluencers.map((inf) =>
       inf.influencerId.toString()
     );
@@ -783,7 +758,6 @@ export const assignInfluencersToCampaign = async (
       });
     }
 
-    // Calculate total after assignment (existing + new)
     const totalAfterAssignment =
       campaign.assignedInfluencers.length + newInfluencerIds.length;
 
@@ -795,7 +769,6 @@ export const assignInfluencersToCampaign = async (
       });
     }
 
-    // Select whatsapp field instead of phone
     const newInfluencers = await Influencer.find({
       _id: { $in: newInfluencerIds },
     }).select("name email whatsapp location phone");
@@ -807,7 +780,6 @@ export const assignInfluencersToCampaign = async (
       });
     }
 
-    // Create new assigned influencer objects with proper structure
     const newAssignedInfluencers = newInfluencerIds.map((influencerId) => ({
       influencerId: new mongoose.Types.ObjectId(influencerId),
       acceptanceStatus: "pending" as const,
@@ -823,7 +795,6 @@ export const assignInfluencersToCampaign = async (
         $push: {
           assignedInfluencers: { $each: newAssignedInfluencers },
         },
-        // Update status if this is the first assignment
         ...(campaign.assignedInfluencers.length === 0 && {
           status: "approved",
         }),
@@ -903,7 +874,6 @@ export const assignInfluencersToCampaign = async (
 
       const whatsappResults = await Promise.allSettled(whatsappPromises);
 
-      // Log WhatsApp notification summary
       const successfulWhatsApp = whatsappResults.filter(
         (result) => result.status === "fulfilled" && result.value.success
       ).length;
@@ -915,7 +885,7 @@ export const assignInfluencersToCampaign = async (
       console.error("Failed to send WhatsApp notifications:", whatsappError);
     }
 
-    // Check if minimum requirement is now met
+    // Check if minimum requirement has been met
     const totalAssigned = updatedCampaign.assignedInfluencers.length;
     if (totalAssigned < campaign.influencersMin) {
       console.log(
@@ -946,6 +916,7 @@ export const assignInfluencersToCampaign = async (
   }
 };
 
+// get campaigns assigned to an influencer
 export const getAssignedCampaigns = async (req: Request, res: Response) => {
   try {
     const { influencerId } = req.params;
@@ -966,7 +937,7 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
     }
 
     const filter: any = {
-      "assignedInfluencers.influencerId": influencerId, // Correctly filter by influencer ID within the subdocument
+      "assignedInfluencers.influencerId": influencerId,
     };
 
     if (status) filter.status = status;
@@ -978,7 +949,6 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
     }
 
     if (dateRange) {
-      // ... (your existing date range filter logic)
       const now = new Date();
       let startDate: Date;
 
@@ -1004,9 +974,6 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const campaigns = await Campaign.find(filter)
-      // Only populate fields that are true references.
-      // brandName and email are on the Campaign doc, so no populating is needed.
-      // Remove the .populate("userId", ...) call.
       .populate(
         "assignedInfluencers.influencerId",
         "name profilePicture followers"
@@ -1036,13 +1003,14 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
   }
 };
 
+// respond to the assigned campaigns
 export const respondToCampaignAssignment = async (
   req: Request,
   res: Response
 ) => {
   try {
     const { campaignId } = req.params;
-    const { status, message } = req.body; // 'status' will be 'accepted' or 'declined'
+    const { status, message } = req.body;
 
     const influencerId = (req as any).user?.id || (req as any).user?._id;
     if (!influencerId) {
@@ -1075,7 +1043,6 @@ export const respondToCampaignAssignment = async (
       });
     }
 
-    // Get influencer details before update
     const influencer = await Influencer.findById(influencerId).select("name");
     if (!influencer) {
       return res.status(404).json({
@@ -1084,20 +1051,18 @@ export const respondToCampaignAssignment = async (
       });
     }
 
-    // Convert influencerId to ObjectId for proper comparison
     const campaign = await Campaign.findOneAndUpdate(
       {
         _id: campaignId,
         "assignedInfluencers.influencerId": new mongoose.Types.ObjectId(
           influencerId
         ),
-        "assignedInfluencers.acceptanceStatus": "pending", // Only update if still pending
+        "assignedInfluencers.acceptanceStatus": "pending",
       },
       {
         $set: {
           "assignedInfluencers.$.acceptanceStatus": status,
           "assignedInfluencers.$.respondedAt": new Date(),
-          // Optional: Add response message if you want to store it
           ...(message && { "assignedInfluencers.$.responseMessage": message }),
         },
       },
@@ -1115,7 +1080,6 @@ export const respondToCampaignAssignment = async (
     // Send notifications based on response
     try {
       const brand = campaign.userId as any;
-      console.log("Brand details:", brand);
 
       if (!brand) {
         console.error("Brand not found for campaign");
@@ -1123,13 +1087,7 @@ export const respondToCampaignAssignment = async (
       }
 
       if (status === "accepted") {
-        console.log(
-          `Influencer ${influencer.name} accepted campaign ${campaign.brandName}`
-        );
-
         if (brand.brandPhone) {
-          console.log(`Sending WhatsApp to brand phone: ${brand.brandPhone}`);
-
           const whatsappResult = await sendCampaignResponseWhatsApp(
             brand.brandPhone,
             brand.brandName || "Brand",
@@ -1138,26 +1096,11 @@ export const respondToCampaignAssignment = async (
             "accepted",
             message
           );
-
-          if (whatsappResult.success) {
-            console.log("WhatsApp sent successfully to brand");
-          } else {
-            console.error(
-              "Failed to send WhatsApp to brand:",
-              whatsappResult.error
-            );
-          }
         } else {
           console.log("Brand has no phone number");
         }
       } else {
-        console.log(
-          `Influencer ${influencer.name} declined campaign ${campaign.brandName}`
-        );
-
         if (brand.brandPhone) {
-          console.log(`Sending WhatsApp to brand phone: ${brand.brandPhone}`);
-
           const whatsappResult = await sendCampaignResponseWhatsApp(
             brand.brandPhone,
             brand.brandName || "Brand",
@@ -1166,22 +1109,12 @@ export const respondToCampaignAssignment = async (
             "declined",
             message
           );
-
-          if (whatsappResult.success) {
-            console.log("WhatsApp sent successfully to brand");
-          } else {
-            console.error(
-              "Failed to send WhatsApp to brand:",
-              whatsappResult.error
-            );
-          }
         } else {
           console.log("Brand has no phone number");
         }
       }
     } catch (notificationError) {
       console.error("Failed to send notification:", notificationError);
-      // Don't fail the request if notification fails
     }
 
     res.status(200).json({
@@ -1194,7 +1127,6 @@ export const respondToCampaignAssignment = async (
     res.status(500).json({
       success: false,
       message: "Internal server error while processing response.",
-      // Only include error details in development
       ...(process.env.NODE_ENV === "development" && { error: err.message }),
     });
   }

@@ -93,7 +93,7 @@ interface PaymentStatusResponse {
   };
 }
 
-// POST /api/verify-payment - Verify payment transaction
+// Verify payment transaction
 export const verifyPayment = async (
   req: VerificationRequest,
   res: Response<PaymentVerificationResponse>
@@ -119,7 +119,6 @@ export const verifyPayment = async (
       return;
     }
 
-    // Check if campaign exists before verification
     const existingCampaign = await Campaign.findById(campaignId);
     if (!existingCampaign) {
       res.status(404).json({
@@ -129,7 +128,6 @@ export const verifyPayment = async (
       return;
     }
 
-    // Check if payment is already verified
     if (existingCampaign.hasPaid) {
       res.status(400).json({
         success: false,
@@ -189,7 +187,6 @@ export const verifyPayment = async (
         return;
       }
 
-      // Return properly formatted response
       res.status(200).json({
         success: true,
         message: "Payment verified and campaign updated successfully",
@@ -208,7 +205,6 @@ export const verifyPayment = async (
         },
       });
     } else {
-      // Handle failed verification
       res.status(400).json({
         success: false,
         error: "Payment verification failed",
@@ -230,7 +226,6 @@ export const verifyPayment = async (
           `Flutterwave API error: ${error.response.status} ${error.response.statusText}`;
         statusCode = error.response.status >= 500 ? 500 : 400;
 
-        // Handle specific Flutterwave error cases
         if (error.response.status === 404) {
           errorMessage = "Transaction not found";
         } else if (error.response.status === 401) {
@@ -253,7 +248,7 @@ export const verifyPayment = async (
   }
 };
 
-// GET /api/verify-payment - Check payment status
+// Check payment status (not in use)
 export const getPaymentStatus = async (
   req: PaymentStatusQuery,
   res: Response<PaymentStatusResponse>
@@ -385,9 +380,3 @@ export const getCampaignPaymentDetails = async (
   }
 };
 
-// Export route configuration for easy setup
-export const paymentRoutes = {
-  verifyPayment,
-  getPaymentStatus,
-  getCampaignPaymentDetails,
-};

@@ -11,8 +11,9 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const companyName = "CaringSparks";
-const frontendUrl = "https://caring-sparks.vercel.app/";
+const companyName = "The•PR•God";
+const frontendUrl = "https://caring-sparks.vercel.app";
+const logoUrl = `${frontendUrl}/Logo.png`;
 
 // Password Reset Email Template
 const getPasswordResetEmailTemplate = (
@@ -225,7 +226,7 @@ const getPasswordResetEmailTemplate = (
   <div class="email-container">
     <!-- Header -->
     <div class="header">
-      <div class="logo">🔒</div>
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
       <h1 class="title">Password Reset Request</h1>
     </div>
     
@@ -275,7 +276,7 @@ const getPasswordResetEmailTemplate = (
       </div>
       
       <p style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
-        Need help? Contact our support team at support@caringsparks.com
+        Need help? Contact our support team at theprcompanydigital@gmail.com
       </p>
     </div>
     
@@ -287,7 +288,7 @@ const getPasswordResetEmailTemplate = (
       
       <div class="footer-links">
         <a href="${frontendUrl}">Login</a>
-        <a href="mailto:support@caringsparks.com">Support</a>
+        <a href="mailto:theprcompanydigital@gmail.com">Support</a>
         <a href="${frontendUrl}/privacy">Privacy Policy</a>
       </div>
       
@@ -503,7 +504,7 @@ const getPasswordResetConfirmationTemplate = (email: string) => {
   <div class="email-container">
     <!-- Header -->
     <div class="header">
-      <div class="logo">✓</div>
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
       <h1 class="title">Password Reset Successful</h1>
     </div>
     
@@ -549,7 +550,7 @@ const getPasswordResetConfirmationTemplate = (email: string) => {
       
       <p style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
         If you didn't make this change or have concerns about your account security,  
-        please contact our support team immediately at support@caringsparks.com
+        please contact our support team immediately at theprcompanydigital@gmail.com
       </p>
     </div>
     
@@ -561,7 +562,7 @@ const getPasswordResetConfirmationTemplate = (email: string) => {
       
       <div class="footer-links">
         <a href="${loginUrl}">Login</a>
-        <a href="mailto:support@caringsparks.com">Support</a>
+        <a href="mailto:theprcompanydigital@gmail.com">Support</a>
         <a href="${frontendUrl}/privacy">Privacy Policy</a>
       </div>
       
@@ -574,7 +575,7 @@ const getPasswordResetConfirmationTemplate = (email: string) => {
 </html>`;
 };
 
-// Send password reset email with better error handling
+// Send password reset email
 export const sendPasswordResetEmail = async (
   email: string,
   resetToken: string,
@@ -593,19 +594,14 @@ export const sendPasswordResetEmail = async (
     const mailOptions = {
       from: `"${companyName} Security" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `🔒 Password Reset Request - ${companyName}`,
+      subject: `Password Reset Request - ${companyName}`,
       html: htmlContent,
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log(
-      `Password reset email sent successfully to ${email}:`,
-      result.messageId
-    );
   } catch (error: any) {
     console.error(`Failed to send password reset email to ${email}:`, error);
 
-    // Provide more specific error messages
     if (error.message.includes("Missing credentials")) {
       throw new Error(
         "Email credentials not configured. Please check EMAIL_USER and EMAIL_PASS environment variables."
@@ -624,7 +620,7 @@ export const sendPasswordResetEmail = async (
   }
 };
 
-// Send password reset confirmation email with better error handling
+// Send password reset confirmation email
 export const sendPasswordResetConfirmationEmail = async (
   email: string
 ): Promise<void> => {
@@ -638,22 +634,17 @@ export const sendPasswordResetConfirmationEmail = async (
     const mailOptions = {
       from: `"${companyName} Security" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `✅ Password Successfully Reset - ${companyName}`,
+      subject: `Password Successfully Reset - ${companyName}`,
       html: htmlContent,
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log(
-      `Password reset confirmation email sent successfully to ${email}:`,
-      result.messageId
-    );
   } catch (error: any) {
     console.error(
       `Failed to send password reset confirmation email to ${email}:`,
       error
     );
 
-    // Provide more specific error messages
     if (error.message.includes("Missing credentials")) {
       throw new Error(
         "Email credentials not configured. Please check EMAIL_USER and EMAIL_PASS environment variables."

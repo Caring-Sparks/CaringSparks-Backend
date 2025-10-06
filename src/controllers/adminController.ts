@@ -1,18 +1,15 @@
+// This controller creates an Admin, sends the onboarding email alongside the generated password 
+
 import { Request, Response } from "express";
 import Admin from "../models/Admin";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { sendOnboardingEmail } from "../services/adminOnboarding";
 
-/**
- * Creates a new admin with a random password and sends an onboarding email.
- * @param req The Express request object.
- * @param res The Express response object.
- */
+//create a new admin
 export const createAdmin = async (req: Request, res: Response) => {
   try {
     const { name, email, phoneNumber } = req.body;
-    // Generate secure password
     const plainPassword = crypto
       .randomBytes(12)
       .toString("base64")
@@ -38,7 +35,6 @@ export const createAdmin = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Admin registration error:", error);
 
-    // Handle specific MongoDB errors
     if (error.name === "ValidationError") {
       return res.status(400).json({
         success: false,
@@ -61,14 +57,10 @@ export const createAdmin = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Fetches a list of all admins from the database.
- * @param req The Express request object.
- * @param res The Express response object.
- */
+//get all existing admins
 export const getAllAdmins = async (req: Request, res: Response) => {
   try {
-    const admins = await Admin.find().select("-password"); // Exclude password from the response
+    const admins = await Admin.find().select("-password");
     res.status(200).json({
       success: true,
       data: admins,
@@ -82,15 +74,11 @@ export const getAllAdmins = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Fetches a single admin by their ID.
- * @param req The Express request object, with `id` in `req.params`.
- * @param res The Express response object.
- */
+//get a specific admin from the ID
 export const getAdminById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const admin = await Admin.findById(id).select("-password"); // Exclude password from the response
+    const admin = await Admin.findById(id).select("-password");
 
     if (!admin) {
       return res.status(404).json({
@@ -112,17 +100,12 @@ export const getAdminById = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Updates an existing admin's details.
- * @param req The Express request object, with `id` in `req.params` and update data in `req.body`.
- * @param res The Express response object.
- */
+//update an admins details
 export const updateAdmin = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
 
-    // If a new password is provided, hash it before updating
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 12);
     }
@@ -130,8 +113,8 @@ export const updateAdmin = async (req: Request, res: Response) => {
     const updatedAdmin = await Admin.findByIdAndUpdate(
       id,
       { $set: updateData },
-      { new: true, runValidators: true } // `new: true` returns the updated doc, `runValidators: true` ensures schema validation
-    ).select("-password"); // Exclude password from the response
+      { new: true, runValidators: true }
+    ).select("-password");
 
     if (!updatedAdmin) {
       return res.status(404).json({
@@ -163,11 +146,7 @@ export const updateAdmin = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Deletes an admin from the database by ID.
- * @param req The Express request object, with `id` in `req.params`.
- * @param res The Express response object.
- */
+//delete an admin
 export const deleteAdmin = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

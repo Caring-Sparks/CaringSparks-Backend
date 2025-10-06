@@ -40,27 +40,28 @@ const createTransporter = () => {
   });
 };
 
+const companyName = "The•PR•God";
+const loginUrl = "https://caring-sparks.vercel.app";
+const logoUrl = `${loginUrl}/Logo.png`;
+
 export const sendPaymentConfirmationEmail = async (
   to: string,
   brandName: string,
   campaign: Campaign
 ) => {
-  const companyName = "CaringSparks";
-  const loginUrl = "https://caring-sparks.vercel.app";
-  const supportEmail = "support@caringsparks.com";
+  const supportEmail = "theprcompanydigital@gmail.com";
 
   const transporter = createTransporter();
 
-  // Use a fallback for campaign title since it might not exist
   const campaignTitle =
     campaign.title || `${campaign.role || "Campaign"} for ${brandName}`;
   const campaignBudget =
     campaign.totalCost || campaign.totalBaseCost || campaign.budget || 0;
 
-  const subject = `🎉 Payment Confirmed - ${campaignTitle} is Now Active!`;
+  const subject = `Payment Confirmed - ${campaignTitle} is Now Active!`;
 
   const mailOptions = {
-    from: `"CaringSparks Team" <${process.env.EMAIL_USER}>`,
+    from: `"The•PR•God Team" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html: `<!DOCTYPE html>
@@ -295,13 +296,13 @@ export const sendPaymentConfirmationEmail = async (
 <body>
   <div class="email-container">
     <div class="header">
-      <div class="logo">🎉</div>
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
       <h1 class="welcome-title">Payment Confirmed!</h1>
     </div>
     
     <div class="content">
       <p class="intro-text">
-        Great news, <strong>${brandName}</strong>! Your payment has been successfully processed and your campaign is now active on CaringSparks.
+        Great news, <strong>${brandName}</strong>! Your payment has been successfully processed and your campaign is now active on The•PR•God.
       </p>
       
       <div class="status-card">
@@ -373,7 +374,7 @@ export const sendPaymentConfirmationEmail = async (
       <p class="footer-text">
         This email was sent regarding your ${
           campaign.role || "campaign"
-        } on CaringSparks.
+        } on The•PR•God.
       </p>
       
       <div class="footer-links">
@@ -383,7 +384,7 @@ export const sendPaymentConfirmationEmail = async (
       </div>
       
       <p class="footer-text">
-        © ${new Date().getFullYear()} CaringSparks. All rights reserved.
+        © ${new Date().getFullYear()} The•PR•God. All rights reserved.
       </p>
     </div>
   </div>
@@ -405,9 +406,9 @@ export const sendInfluencersAssignedEmail = async (
   campaign: Campaign,
   assignedInfluencers: Influencer[]
 ) => {
-  const companyName = "CaringSparks";
+  const companyName = "The•PR•God";
   const loginUrl = "https://caring-sparks.vercel.app";
-  const supportEmail = "support@caringsparks.com";
+  const supportEmail = "theprcompanydigital@gmail.com";
 
   const transporter = createTransporter();
 
@@ -417,7 +418,7 @@ export const sendInfluencersAssignedEmail = async (
   const campaignBudget =
     campaign.totalCost || campaign.totalBaseCost || campaign.budget || 0;
 
-  const subject = `🚀 Influencers Assigned - ${campaignTitle} Ready to Launch!`;
+  const subject = `Influencers Assigned - ${campaignTitle} Ready to Launch!`;
 
   const influencersList = assignedInfluencers
     .map(
@@ -443,7 +444,7 @@ export const sendInfluencersAssignedEmail = async (
     .join("");
 
   const mailOptions = {
-    from: `"CaringSparks Team" <${process.env.EMAIL_USER}>`,
+    from: `"The•PR•God Team" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html: `<!DOCTYPE html>
@@ -696,7 +697,7 @@ export const sendInfluencersAssignedEmail = async (
 <body>
   <div class="email-container">
     <div class="header">
-      <div class="logo">🚀</div>
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
       <h1 class="welcome-title">Influencers Assigned!</h1>
     </div>
     
@@ -780,7 +781,7 @@ export const sendInfluencersAssignedEmail = async (
     
     <div class="footer">
       <p class="footer-text">
-        This email was sent regarding your campaign "${campaignTitle}" on CaringSparks.
+        This email was sent regarding your campaign "${campaignTitle}" on The•PR•God.
       </p>
       
       <div class="footer-links">
@@ -790,7 +791,7 @@ export const sendInfluencersAssignedEmail = async (
       </div>
       
       <p class="footer-text">
-        © ${new Date().getFullYear()} CaringSparks. All rights reserved.
+        © ${new Date().getFullYear()} The•PR•God. All rights reserved.
       </p>
     </div>
   </div>
@@ -814,13 +815,13 @@ export const sendInfluencerAssignmentEmail = (
   influencerName: string,
   campaign: any,
   loginUrl = "https://caring-sparks.vercel.app",
-  supportEmail = "support@caringsparks.com"
+  supportEmail = "theprcompanydigital@gmail.com"
 ) => {
   const campaignTitle =
     campaign.title ||
     `${campaign.role || "Brand Partnership"} with ${campaign.brandName}`;
 
-  const subject = `🎯 New Campaign Assignment: ${campaignTitle}`;
+  const subject = `New Campaign Assignment: ${campaignTitle}`;
   const campaignBudget =
     campaign.totalCost || campaign.totalBaseCost || campaign.budget || 0;
 
@@ -1140,7 +1141,7 @@ export const sendInfluencerAssignmentEmail = (
 <body>
   <div class="email-container">
     <div class="header">
-      <div class="logo">🎯</div>
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
       <h1 class="welcome-title">Campaign Assignment!</h1>
     </div>
     
@@ -1234,7 +1235,7 @@ export const sendInfluencerAssignmentEmail = (
     
     <div class="footer">
       <p class="footer-text">
-        This email was sent regarding your campaign assignment on CaringSparks.
+        This email was sent regarding your campaign assignment on The•PR•God.
       </p>
       
       <div class="footer-links">
@@ -1245,7 +1246,7 @@ export const sendInfluencerAssignmentEmail = (
       </div>
       
       <p class="footer-text">
-        © ${new Date().getFullYear()} CaringSparks. All rights reserved.
+        © ${new Date().getFullYear()} The•PR•God. All rights reserved.
       </p>
     </div>
   </div>

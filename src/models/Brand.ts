@@ -35,7 +35,6 @@ export interface IBrand extends Document {
 
 const brandSchema: Schema = new Schema(
   {
-    // Basic brand information
     role: {
       type: String,
       required: true,
@@ -70,8 +69,6 @@ const brandSchema: Schema = new Schema(
       required: true,
       trim: true,
     },
-
-    // Campaign requirements
     influencersMin: {
       type: Number,
       required: true,
@@ -109,8 +106,6 @@ const brandSchema: Schema = new Schema(
       type: String,
       enum: ["", "1 day", "1 week", "2 weeks", "1 month"],
     },
-
-    // Calculated pricing fields (from frontend)
     avgInfluencers: {
       type: Number,
       min: 0,
@@ -135,8 +130,6 @@ const brandSchema: Schema = new Schema(
       type: Number,
       min: 0,
     },
-
-    // System fields
     password: {
       type: String,
       required: true,

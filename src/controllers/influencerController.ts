@@ -10,6 +10,7 @@ import {
   sendInfluencerStatusEmail,
 } from "../services/influencerEmailService";
 
+// Create a new influencer
 export const createInfluencer = async (
   req: Request,
   res: Response
@@ -17,7 +18,6 @@ export const createInfluencer = async (
   try {
     const filesMap: { [key: string]: Express.Multer.File } = {};
 
-    // Handle different file upload formats that Multer can provide
     if (req.files) {
       if (Array.isArray(req.files)) {
         // When files are uploaded as an array
@@ -25,19 +25,17 @@ export const createInfluencer = async (
           filesMap[file.fieldname] = file;
         });
       } else {
-        // When files are uploaded as an object with field names
         Object.keys(req.files).forEach((fieldname) => {
           const fileArray = (
             req.files as { [fieldname: string]: Express.Multer.File[] }
           )[fieldname];
           if (fileArray && fileArray.length > 0) {
-            filesMap[fieldname] = fileArray[0]; // Take the first file if multiple
+            filesMap[fieldname] = fileArray[0];
           }
         });
       }
     }
 
-    // Parse JSON strings from FormData
     const parsedBody = { ...req.body };
     Object.keys(parsedBody).forEach((key) => {
       if (typeof parsedBody[key] === "string") {
@@ -46,9 +44,7 @@ export const createInfluencer = async (
           if (typeof parsed === "object") {
             parsedBody[key] = parsed;
           }
-        } catch (e) {
-          // Not JSON, keep as string
-        }
+        } catch (e) {}
       }
     });
 
@@ -64,7 +60,6 @@ export const createInfluencer = async (
       femalePercentage,
     } = parsedBody;
 
-    // Validate required fields
     const requiredFields = ["name", "email", "phone", "whatsapp", "location"];
     const missingFields = requiredFields.filter((field) => !parsedBody[field]);
 
@@ -138,8 +133,6 @@ export const createInfluencer = async (
       femalePercentage: Number(femalePercentage) || 0,
       status: "pending",
       emailSent: false,
-
-      // Add calculated earnings fields from frontend
       followerFee: Number(parsedBody.followerFee) || 0,
       impressionFee: Number(parsedBody.impressionFee) || 0,
       locationFee: Number(parsedBody.locationFee) || 0,
@@ -171,7 +164,6 @@ export const createInfluencer = async (
         const { followers, url, impressions } = platformData;
 
         if (followers && url && impressions) {
-          // Validate platform data
           if (isNaN(Number(followers)) || Number(followers) < 0) {
             res.status(400).json({
               success: false,
@@ -203,7 +195,7 @@ export const createInfluencer = async (
           };
 
           const proofFile =
-            filesMap[`${platform}[proof]`] || // Frontend sends this format first
+            filesMap[`${platform}[proof]`] ||
             filesMap[`${platform}.proof`] ||
             filesMap[`${platform}Proof`] ||
             filesMap[`${platform}_proof`] ||
@@ -240,7 +232,6 @@ export const createInfluencer = async (
       }
     }
 
-    // Handle audience proof file
     const audienceProofFile =
       filesMap.audienceProof ||
       filesMap.audience_proof ||
@@ -333,6 +324,7 @@ export const createInfluencer = async (
   }
 };
 
+// Update the influencer data
 export const updateInfluencer = async (
   req: Request,
   res: Response
@@ -340,7 +332,6 @@ export const updateInfluencer = async (
   try {
     const { id } = req.params;
 
-    // Validate MongoDB ObjectId format
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
       res.status(400).json({
         success: false,
@@ -359,7 +350,6 @@ export const updateInfluencer = async (
       return;
     }
 
-    // Handle file uploads if present
     const filesMap: { [key: string]: Express.Multer.File } = {};
     if (req.files) {
       if (Array.isArray(req.files)) {
@@ -378,7 +368,6 @@ export const updateInfluencer = async (
       }
     }
 
-    // Parse JSON strings from FormData
     const parsedBody = { ...req.body };
     Object.keys(parsedBody).forEach((key) => {
       if (typeof parsedBody[key] === "string") {
@@ -387,13 +376,10 @@ export const updateInfluencer = async (
           if (typeof parsed === "object") {
             parsedBody[key] = parsed;
           }
-        } catch (e) {
-          // Not JSON, keep as string
-        }
+        } catch (e) {}
       }
     });
 
-    // Fields that can be updated
     const allowedUpdates = [
       "name",
       "phone",
@@ -414,11 +400,9 @@ export const updateInfluencer = async (
       "followersCount",
     ];
 
-    // Build update object with only allowed fields
     const updates: any = {};
     Object.keys(parsedBody).forEach((key) => {
       if (allowedUpdates.includes(key) && parsedBody[key] !== undefined) {
-        // Convert numeric fields
         if (
           [
             "malePercentage",
@@ -441,7 +425,6 @@ export const updateInfluencer = async (
       }
     });
 
-    // Validate email format if email is being updated (but don't allow email updates for security)
     if (parsedBody.email && parsedBody.email !== existingInfluencer.email) {
       res.status(400).json({
         success: false,
@@ -450,7 +433,6 @@ export const updateInfluencer = async (
       return;
     }
 
-    // Validate niches if provided
     if (updates.niches) {
       let parsedNiches;
       try {
@@ -479,14 +461,12 @@ export const updateInfluencer = async (
     const uploadPromises: Promise<any>[] = [];
     const platforms = ["instagram", "twitter", "tiktok", "youtube"];
 
-    // Handle platform updates
     for (const platform of platforms) {
       const platformData = parsedBody[platform];
 
       if (platformData && typeof platformData === "object") {
         const { followers, url, impressions } = platformData;
 
-        // Validate platform data if all fields are provided
         if (
           followers !== undefined &&
           url !== undefined &&
@@ -516,7 +496,6 @@ export const updateInfluencer = async (
             return;
           }
 
-          // Update platform data
           const existingPlatformData = (existingInfluencer as any)[platform];
           updates[platform] = {
             ...(existingPlatformData?.toObject
@@ -527,7 +506,6 @@ export const updateInfluencer = async (
             impressions: Number(impressions),
           };
 
-          // Handle new proof file upload
           const proofFile =
             filesMap[`${platform}[proof]`] ||
             filesMap[`${platform}.proof`] ||
@@ -553,7 +531,6 @@ export const updateInfluencer = async (
                       result?.secure_url
                     );
 
-                    // Delete old proof file if it exists
                     const existingPlatformData = (existingInfluencer as any)[
                       platform
                     ];
@@ -588,7 +565,6 @@ export const updateInfluencer = async (
       }
     }
 
-    // Handle audience proof file update
     const audienceProofFile =
       filesMap.audienceProof ||
       filesMap.audience_proof ||
@@ -609,7 +585,6 @@ export const updateInfluencer = async (
             } else {
               console.log("Audience upload success:", result?.secure_url);
 
-              // Delete old audience proof file if it exists
               if (existingInfluencer.audienceProofUrl) {
                 try {
                   const oldUrl = existingInfluencer.audienceProofUrl;
@@ -638,7 +613,6 @@ export const updateInfluencer = async (
       uploadPromises.push(audienceUploadPromise);
     }
 
-    // Wait for all file uploads to complete
     if (uploadPromises.length > 0) {
       try {
         console.log(
@@ -656,10 +630,8 @@ export const updateInfluencer = async (
       }
     }
 
-    // Add updatedAt timestamp
     updates.updatedAt = new Date();
 
-    // Update influencer in database
     const updatedInfluencer = await Influencer.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true,
@@ -681,7 +653,6 @@ export const updateInfluencer = async (
   } catch (error: any) {
     console.error("Update influencer error:", error);
 
-    // Handle specific MongoDB errors
     if (error.name === "ValidationError") {
       res.status(400).json({
         success: false,
@@ -698,6 +669,7 @@ export const updateInfluencer = async (
   }
 };
 
+// Get all influencers
 export const getInfluencers = async (
   req: Request,
   res: Response
@@ -754,6 +726,8 @@ export const getInfluencers = async (
     });
   }
 };
+
+// Get influencer by the ID
 export const getInfluencerById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -789,6 +763,7 @@ export const getInfluencerById = async (req: Request, res: Response) => {
   }
 };
 
+// Update the influencer status
 export const updateInfluencerStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -856,7 +831,6 @@ export const deleteInfluencer = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Validate MongoDB ObjectId format
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
       res.status(400).json({
         success: false,
@@ -875,10 +849,8 @@ export const deleteInfluencer = async (req: Request, res: Response) => {
       return;
     }
 
-    // Clean up uploaded files from Cloudinary before deletion
     const filesToDelete: string[] = [];
 
-    // Collect all proof URLs
     const platforms = ["instagram", "twitter", "tiktok", "youtube"];
     platforms.forEach((platform) => {
       const platformData = (influencer as any)[platform];
@@ -891,10 +863,8 @@ export const deleteInfluencer = async (req: Request, res: Response) => {
       filesToDelete.push(influencer.audienceProofUrl);
     }
 
-    // Delete files from Cloudinary
     const deletePromises = filesToDelete.map(async (url) => {
       try {
-        // Extract public_id from Cloudinary URL
         const urlParts = url.split("/");
         const fileWithExt = urlParts[urlParts.length - 1];
         const publicId = urlParts
@@ -906,16 +876,13 @@ export const deleteInfluencer = async (req: Request, res: Response) => {
         console.log(`Deleted file from Cloudinary: ${publicId}`);
       } catch (error) {
         console.error(`Failed to delete file from Cloudinary: ${url}`, error);
-        // Continue deletion even if file cleanup fails
       }
     });
 
-    // Execute file deletions (don't wait for completion to avoid blocking)
     Promise.all(deletePromises).catch((error) => {
       console.error("Some files could not be deleted from Cloudinary:", error);
     });
 
-    // Delete influencer from database
     await Influencer.findByIdAndDelete(id);
 
     res.status(200).json({
@@ -939,7 +906,7 @@ export const deleteInfluencer = async (req: Request, res: Response) => {
   }
 };
 
-// Get influencer statistics/dashboard data
+// Get influencer statistics
 export const getInfluencerStats = async (req: Request, res: Response) => {
   try {
     const totalInfluencers = await Influencer.countDocuments();
@@ -953,12 +920,10 @@ export const getInfluencerStats = async (req: Request, res: Response) => {
       status: "rejected",
     });
 
-    // Recent registrations (last 30 days)
     const recentInfluencers = await Influencer.countDocuments({
       createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
     });
 
-    // Platform distribution
     const platformStats = await Influencer.aggregate([
       {
         $project: {
@@ -1139,6 +1104,7 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
+// Update influencer payment details
 export const updateInfluencerPaymentDetails = async (
   req: AuthenticatedRequest,
   res: Response
@@ -1173,7 +1139,6 @@ export const updateInfluencerPaymentDetails = async (
     let updateData: any = {};
 
     if (paymentType === "bank") {
-      // Validate bank details
       if (!bankName || !accountNumber || !accountName) {
         return res.status(400).json({
           success: false,
@@ -1210,7 +1175,6 @@ export const updateInfluencerPaymentDetails = async (
         },
       };
     } else if (paymentType === "crypto") {
-      // Validate crypto details
       if (!walletAddress || !network || !walletType) {
         return res.status(400).json({
           success: false,
@@ -1433,7 +1397,6 @@ export const updateInfluencerBankDetails = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
-  // Transform old request format to new format
   req.body = {
     paymentType: "bank",
     ...req.body.bankDetails,

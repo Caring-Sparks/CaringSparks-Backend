@@ -1,11 +1,14 @@
 import nodemailer from "nodemailer";
 
+const loginUrl = "https://caring-sparks.vercel.app";
+const logoUrl = `${loginUrl}/Logo.png`;
+
 export const sendBrandEmail = async (
   to: string,
   password: string,
   brandName: string
 ) => {
-  const companyName = "CaringSparks";
+  const companyName = "The•PR•God";
   const loginUrl = "https://caring-sparks.vercel.app";
 
   const transporter = nodemailer.createTransport({
@@ -17,9 +20,9 @@ export const sendBrandEmail = async (
   });
 
   const brandMailOptions = {
-    from: `"CaringSparks - " <${process.env.EMAIL_USER}>`,
+    from: `"The•PR•God - " <${process.env.EMAIL_USER}>`,
     to,
-    subject: `Welcome to CaringSparks, ${brandName}!`,
+    subject: `Welcome to The•PR•God, ${brandName}!`,
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -222,8 +225,8 @@ export const sendBrandEmail = async (
   <div class="email-container">
     <!-- Header -->
     <div class="header">
-      <div class="logo">🏢</div>
-      <h1 class="welcome-title">Welcome to CaringSparks!</h1>
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
+      <h1 class="welcome-title">Welcome to The•PR•God!</h1>
     </div>
     
     <!-- Content -->
@@ -278,17 +281,17 @@ export const sendBrandEmail = async (
     <!-- Footer -->
     <div class="footer">
       <p class="footer-text">
-        This email was sent to ${to} because ${brandName} was registered on CaringSparks.
+        This email was sent to ${to} because ${brandName} was registered on The•PR•God.
       </p>
       
       <div class="footer-links">
         <a href="${loginUrl}/brand">Login</a>
-        <a href="mailto:support@caringsparks.com">Support</a>
+        <a href="mailto:theprcompanydigital@gmail.com">Support</a>
         <a href="https://caring-sparks.vercel.app/">Privacy Policy</a>
       </div>
       
       <p class="footer-text">
-        © ${new Date().getFullYear()} CaringSparks. All rights reserved.  
+        © ${new Date().getFullYear()} The•PR•God. All rights reserved.  
       </p>
     </div>
   </div>
@@ -298,9 +301,9 @@ export const sendBrandEmail = async (
   };
 
   const adminMailOptions = {
-    from: `"CaringSparks System" <${process.env.EMAIL_USER}>`,
+    from: `"The•PR•God System" <${process.env.EMAIL_USER}>`,
     to: process.env.EMAIL_USER,
-    subject: `🎉 New Brand Registration: ${brandName} - CaringSparks`, // Added brand name here
+    subject: `New Brand Registration: ${brandName} - The•PR•God`,
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -388,7 +391,7 @@ export const sendBrandEmail = async (
     </div>
     
     <div class="content">
-      <p>A new brand <span class="highlight">${brandName}</span> has successfully registered on the CaringSparks platform!</p>
+      <p>A new brand <span class="highlight">${brandName}</span> has successfully registered on the The•PR•God platform!</p>
       
       <div class="brand-info">
         <h3 style="margin-top: 0; color: #374151;">Brand Details:</h3>
@@ -406,7 +409,7 @@ export const sendBrandEmail = async (
         </div>
         <div class="info-row">
           <span class="info-label">Platform:</span>
-          <span class="info-value">CaringSparks</span>
+          <span class="info-value">The•PR•God</span>
         </div>
       </div>
       
@@ -419,13 +422,13 @@ export const sendBrandEmail = async (
       <p>The brand <strong>${brandName}</strong> has been sent their welcome email with login credentials and can now access their dashboard.</p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">
-        This is an automated notification from the CaringSparks registration system.
+        This is an automated notification from the The•PR•God registration system.
       </p>
     </div>
     
     <div class="footer">
-      <p>CaringSparks Admin Notifications</p>
-      <p>© ${new Date().getFullYear()} CaringSparks. All rights reserved.</p>
+      <p>The•PR•God Admin Notifications</p>
+      <p>© ${new Date().getFullYear()} The•PR•God. All rights reserved.</p>
     </div>
   </div>
 </body>
@@ -452,9 +455,9 @@ export const sendCampaignStatusEmail = async (
   campaignDuration?: any,
   hasPaid?: boolean
 ) => {
-  const companyName = "CaringSparks";
+  const companyName = "The•PR•God";
   const loginUrl = "https://caring-sparks.vercel.app";
-  const supportEmail = "support@caringsparks.com";
+  const supportEmail = "theprcompanydigital@gmail.com";
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -477,9 +480,9 @@ export const sendCampaignStatusEmail = async (
 
   const subject = isApproved
     ? isPaidAndApproved
-      ? `🚀 Campaign Live: "${brandName}" - Influencers Being Matched`
-      : `🎉 Campaign Approved: "${brandName}" - Payment Required`
-    : `📋 Campaign Update: "${brandName}" Status`;
+      ? `Campaign Live: "${brandName}" - Influencers Being Matched`
+      : `Campaign Approved: "${brandName}" - Payment Required`
+    : `Campaign Update: "${brandName}" Status`;
 
   const mainMessage = isApproved
     ? isPaidAndApproved
@@ -494,7 +497,7 @@ export const sendCampaignStatusEmail = async (
   paymentDeadline.setDate(paymentDeadline.getDate() + 5);
 
   const brandMailOptions = {
-    from: `"CaringSparks Team" <${process.env.EMAIL_USER}>`,
+    from: `"The•PR•God Team" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html: `<!DOCTYPE html>
@@ -831,7 +834,7 @@ export const sendCampaignStatusEmail = async (
   <div class="email-container">
     <!-- Header -->
     <div class="header">
-      <div class="logo">${statusEmoji}</div>
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
       <h1 class="welcome-title">${
         isApproved
           ? isPaidAndApproved
@@ -1044,7 +1047,7 @@ export const sendCampaignStatusEmail = async (
     <!-- Footer -->
     <div class="footer">
       <p class="footer-text">
-        This email was sent to ${to} regarding your campaign "${brandName}" on CaringSparks.
+        This email was sent to ${to} regarding your campaign "${brandName}" on The•PR•God.
       </p>
       
       <div class="footer-links">
@@ -1054,7 +1057,7 @@ export const sendCampaignStatusEmail = async (
       </div>
       
       <p class="footer-text">
-        © ${new Date().getFullYear()} CaringSparks. All rights reserved.  
+        © ${new Date().getFullYear()} The•PR•God. All rights reserved.  
       </p>
     </div>
   </div>
@@ -1155,11 +1158,11 @@ export const sendCampaignEmails = async (
 
     // Admin Email Template
     const adminCampaignMailOptions = {
-      from: `"CaringSparks System" <${process.env.EMAIL_USER}>`,
+      from: `"The•PR•God System" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
       subject: `🚀 New Campaign Created: ${brandName} - ${platforms.join(
         ", "
-      )} Campaign - CaringSparks`,
+      )} Campaign - The•PR•God`,
       html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1303,7 +1306,7 @@ export const sendCampaignEmails = async (
     </div>
     
     <div class="content">
-      <p>A new campaign has been created by <span class="highlight">${brandName}</span> on the CaringSparks platform!</p>
+      <p>A new campaign has been created by <span class="highlight">${brandName}</span> on the The•PR•God platform!</p>
       
       <div class="campaign-info">
         <div class="info-section">
@@ -1444,13 +1447,13 @@ export const sendCampaignEmails = async (
       <p>The campaign is now live in the system and awaiting payment.</p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">
-        This is an automated notification from the CaringSparks campaign system.
+        This is an automated notification from the The•PR•God campaign system.
       </p>
     </div>
     
     <div class="footer">
-      <p>CaringSparks Admin Notifications</p>
-      <p>© ${new Date().getFullYear()} CaringSparks. All rights reserved.</p>
+      <p>The•PR•God Admin Notifications</p>
+      <p>© ${new Date().getFullYear()} The•PR•God. All rights reserved.</p>
     </div>
   </div>
 </body>
@@ -1460,9 +1463,9 @@ export const sendCampaignEmails = async (
 
     // Brand Confirmation Email Template
     const brandCampaignMailOptions = {
-      from: `"CaringSparks Team" <${process.env.EMAIL_USER}>`,
+      from: `"The•PR•God Team" <${process.env.EMAIL_USER}>`,
       to: userEmail,
-      subject: `🎯 Campaign Created Successfully - ${brandName} - CaringSparks`,
+      subject: `🎯 Campaign Created Successfully - ${brandName} - The•PR•God`,
       html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1622,7 +1625,7 @@ export const sendCampaignEmails = async (
 
       <p>Dear <span class="highlight">${brandName}</span>,</p>
       
-      <p>Congratulations! Your influencer marketing campaign has been successfully created on CaringSparks. Please complete your payment to enable our team match you with verified influencers that match your preferences.</p>
+      <p>Congratulations! Your influencer marketing campaign has been successfully created on The•PR•God. Please complete your payment to enable our team match you with verified influencers that match your preferences.</p>
       
       <div class="campaign-summary">
         <h3 style="margin-top: 0; color: #374151;">Campaign Summary</h3>
@@ -1716,11 +1719,11 @@ export const sendCampaignEmails = async (
       
       <p>Need help or have questions? Our support team is here to assist you every step of the way.</p>
       
-      <p>Thank you for choosing CaringSparks for your influencer marketing needs!</p>
+      <p>Thank you for choosing The•PR•God for your influencer marketing needs!</p>
       
       <p style="margin-top: 30px;">
         Best regards,<br>
-        <strong>The CaringSparks Team</strong>
+        <strong>The The•PR•God Team</strong>
       </p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">
@@ -1730,9 +1733,9 @@ export const sendCampaignEmails = async (
     </div>
     
     <div class="footer">
-      <p><strong>CaringSparks</strong> - Connecting Brands with Authentic Voices</p>
-      <p>Need help? Contact us at <a href="mailto:support@caringsparks.com">support@caringsparks.com</a></p>
-      <p>© ${new Date().getFullYear()} CaringSparks. All rights reserved.</p>
+      <p><strong>The•PR•God</strong> - Connecting Brands with Authentic Voices</p>
+      <p>Need help? Contact us at <a href="mailto:theprcompanydigital@gmail.com">theprcompanydigital@gmail.com</a></p>
+      <p>© ${new Date().getFullYear()} The•PR•God. All rights reserved.</p>
     </div>
   </div>
 </body>

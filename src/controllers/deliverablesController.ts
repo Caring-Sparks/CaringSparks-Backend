@@ -24,7 +24,6 @@ interface DeliverableSubmission {
   };
 }
 
-// Helper function to extract post count from postFrequency string
 const extractPostCount = (postFrequency: any): number => {
   if (!postFrequency) return 1;
 
@@ -70,6 +69,7 @@ const extractPostCount = (postFrequency: any): number => {
   return 1;
 };
 
+// Submit the campaign deliverables from the influencer
 export const submitCampaignDeliverables = async (
   req: AuthenticatedRequest,
   res: Response
@@ -125,7 +125,6 @@ export const submitCampaignDeliverables = async (
       }
     }
 
-    // Find the campaign and the specific influencer assignment
     const campaign = await Campaign.findOne({
       _id: campaignId,
       "assignedInfluencers.influencerId": new mongoose.Types.ObjectId(
@@ -142,7 +141,6 @@ export const submitCampaignDeliverables = async (
       });
     }
 
-    // Find the specific influencer assignment
     const influencerAssignment = campaign.assignedInfluencers.find(
       (assignment) => assignment.influencerId.toString() === influencerId
     );
@@ -161,7 +159,6 @@ export const submitCampaignDeliverables = async (
       });
     }
 
-    // Extract required post count from campaign
     const requiredPostCount =
       campaign.postCount || extractPostCount(campaign.postFrequency);
     console.log(
@@ -182,7 +179,6 @@ export const submitCampaignDeliverables = async (
       });
     }
 
-    // Get influencer details
     const influencer = await Influencer.findById(influencerId).select("name");
     if (!influencer) {
       return res.status(404).json({
@@ -191,7 +187,6 @@ export const submitCampaignDeliverables = async (
       });
     }
 
-    // Transform deliverables to match the schema structure
     const submittedJobs = deliverables.map((deliverable) => ({
       description: `Platform: ${deliverable.platform}\nDescription: ${
         deliverable.description
@@ -204,7 +199,6 @@ export const submitCampaignDeliverables = async (
       submittedAt: new Date(),
     }));
 
-    // Mark as complete when all posts are submitted
     const updatedCampaign = await Campaign.findOneAndUpdate(
       {
         _id: campaignId,
@@ -256,7 +250,6 @@ export const submitCampaignDeliverables = async (
       }
     } catch (notificationError) {
       console.error("Failed to send WhatsApp notification:", notificationError);
-      // Don't fail the request if notification fails
     }
 
     res.status(200).json({
@@ -280,7 +273,7 @@ export const submitCampaignDeliverables = async (
   }
 };
 
-// Optional: Endpoint to get deliverable status
+// Get deliverable status (not in use)
 export const getDeliverableStatus = async (
   req: AuthenticatedRequest,
   res: Response
@@ -341,7 +334,7 @@ export const getDeliverableStatus = async (
   }
 };
 
-// **NEW FUNCTION**: Allow partial submissions and save progress
+// Draft the submitted deliverables
 export const saveDeliverablesDraft = async (
   req: AuthenticatedRequest,
   res: Response
@@ -388,7 +381,6 @@ export const saveDeliverablesDraft = async (
       submittedAt: new Date(),
     }));
 
-    // **IMPORTANT**: Only mark as complete if all required posts are submitted
     const isCompleted = deliverables.length >= requiredPostCount;
 
     const updateData: any = {
@@ -435,6 +427,7 @@ export const saveDeliverablesDraft = async (
   }
 };
 
+// Update the submitted deliverables
 export const updateSubmittedDeliverables = async (
   req: AuthenticatedRequest,
   res: Response
@@ -472,7 +465,7 @@ export const updateSubmittedDeliverables = async (
       "assignedInfluencers.influencerId": new mongoose.Types.ObjectId(
         influencerId
       ),
-      "assignedInfluencers.isCompleted": true, // Only allow updates if already completed
+      "assignedInfluencers.isCompleted": true,
     });
 
     if (!campaign) {
@@ -483,11 +476,9 @@ export const updateSubmittedDeliverables = async (
       });
     }
 
-    // Extract required post count and validate
     const requiredPostCount =
       campaign.postCount || extractPostCount(campaign.postFrequency);
 
-    // **MAINTAIN THE REQUIREMENT**: Still need all posts for updates
     if (deliverables.length !== requiredPostCount) {
       return res.status(400).json({
         success: false,
@@ -499,7 +490,6 @@ export const updateSubmittedDeliverables = async (
       });
     }
 
-    // Transform deliverables
     const submittedJobs = deliverables.map((deliverable) => ({
       description: `Platform: ${deliverable.platform}\nDescription: ${
         deliverable.description
@@ -509,10 +499,9 @@ export const updateSubmittedDeliverables = async (
           : ""
       }\nPost URL: ${deliverable.url}`,
       imageUrl: deliverable.url,
-      submittedAt: new Date(), // Update submission time
+      submittedAt: new Date(),
     }));
 
-    // Update the submitted jobs
     const updatedCampaign = await Campaign.findOneAndUpdate(
       {
         _id: campaignId,
@@ -523,7 +512,6 @@ export const updateSubmittedDeliverables = async (
       {
         $set: {
           "assignedInfluencers.$.submittedJobs": submittedJobs,
-          // Keep isCompleted as true since this is an update of already completed work
           "assignedInfluencers.$.isCompleted": true,
         },
       },

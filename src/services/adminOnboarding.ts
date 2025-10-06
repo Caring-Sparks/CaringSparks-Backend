@@ -10,15 +10,15 @@ export const sendOnboardingEmail = async (to: string, password: string) => {
   });
 
   const adminOnboarding = {
-    from: `"CaringSparks System" <${process.env.EMAIL_USER}>`,
+    from: `"The•PR•God System" <${process.env.EMAIL_USER}>`,
     to: to,
-    subject: `Welcome to CaringSparks! Your Admin Account is Ready`,
+    subject: `Welcome to The•PR•God! Your Admin Account is Ready`,
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to CaringSparks</title>
+  <title>Welcome to The•PR•God</title>
   <style>
     body {
       margin: 0;
@@ -96,13 +96,13 @@ export const sendOnboardingEmail = async (to: string, password: string) => {
 <body>
   <div class="email-container">
     <div class="header">
-      <h1>Welcome to CaringSparks!</h1>
+      <h1>Welcome to The•PR•God!</h1>
     </div>
     
     <div class="content">
       <p>Hello,</p>
       
-      <p>Your administrator account for the CaringSparks platform has been created. You can now log in to the admin dashboard using the credentials below:</p>
+      <p>Your administrator account for the The•PR•God platform has been created. You can now log in to the admin dashboard using the credentials below:</p>
       
       <div class="brand-info">
         <h3 style="margin-top: 0; color: #374151;">Your Account Details:</h3>
@@ -116,13 +116,13 @@ export const sendOnboardingEmail = async (to: string, password: string) => {
         </div>
         <div class="info-row">
           <span class="info-label">Platform:</span>
-          <span class="info-value">CaringSparks Admin Dashboard</span>
+          <span class="info-value">The•PR•God Admin Dashboard</span>
         </div>
       </div>
       
       <p>For security, please change your password immediately after your first login.</p>
       
-      <p>Thank you for your dedication and commitment to the CaringSparks team!</p>
+      <p>Thank you for your dedication and commitment to the The•PR•God team!</p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">
         This is an automated message. Please do not reply to this email.
@@ -130,8 +130,8 @@ export const sendOnboardingEmail = async (to: string, password: string) => {
     </div>
     
     <div class="footer">
-      <p>CaringSparks Admin Notifications</p>
-      <p>© ${new Date().getFullYear()} CaringSparks. All rights reserved.</p>
+      <p>The•PR•God Admin Notifications</p>
+      <p>© ${new Date().getFullYear()} The•PR•God. All rights reserved.</p>
     </div>
   </div>
 </body>
