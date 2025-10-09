@@ -9,6 +9,7 @@ import {
   sendAdminNotificationEmail,
   sendInfluencerStatusEmail,
 } from "../services/influencerEmailService";
+import { sendInfluencerStatusWhatsApp } from "../services/whatsAppService";
 
 // Create a new influencer
 export const createInfluencer = async (
@@ -799,8 +800,9 @@ export const updateInfluencerStatus = async (req: Request, res: Response) => {
       return;
     }
 
-    // Send email notification for approved or rejected status
+    // Send notifications for approved or rejected status
     if (status === "approved" || status === "rejected") {
+      // Send email notification
       try {
         await sendInfluencerStatusEmail(
           influencer.email,
@@ -809,6 +811,19 @@ export const updateInfluencerStatus = async (req: Request, res: Response) => {
         );
       } catch (emailError) {
         console.error("Failed to send status email:", emailError);
+      }
+
+      // Send WhatsApp notification
+      if (influencer.whatsapp) {
+        try {
+          await sendInfluencerStatusWhatsApp(
+            influencer.whatsapp,
+            influencer.name,
+            status
+          );
+        } catch (whatsappError) {
+          console.error("Failed to send WhatsApp notification:", whatsappError);
+        }
       }
     }
 

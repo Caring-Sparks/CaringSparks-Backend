@@ -42,6 +42,8 @@ const formatPhoneNumber = (phoneNumber: string) => {
     : `whatsapp:${phoneNumber}`;
 };
 
+const homePageUrl = "https://caring-sparks.vercel.app";
+
 export const sendWhatsAppMessage = async (
   to: string,
   body: string,
@@ -165,7 +167,10 @@ You've been assigned to a new campaign:
 
 Please log in to your dashboard to review the campaign details and accept the assignment.
 
-Thank you for being part of CaringSparks! 🌟`;
+Thank you for being part of The•PR•God! 🌟
+
+👉 *Login here:* ${homePageUrl}
+`;
 
   return await sendWhatsAppMessage(phoneNumber, message);
 };
@@ -197,7 +202,10 @@ ${
     : "You may want to assign another influencer to this campaign."
 }
 
-Check your dashboard for more details.`;
+Check your dashboard for more details.
+
+👉 *Login here:* ${homePageUrl}
+`;
 
   return await sendWhatsAppMessage(phoneNumber, message);
 };
@@ -220,9 +228,50 @@ ${influencerName} has completed and submitted all deliverables for your campaign
 👤 *Influencer:* ${influencerName}
 ✅ *Submitted:* ${deliverableCount}/${requiredCount} posts
 
-All required deliverables have been submitted. Please review and approve them in your dashboard.
+All required deliverables have been submitted. Please review them in your dashboard.
 
-Great work from your influencer! 🎉`;
+Great work from your influencer! 🎉
+
+👉 *Login here:* ${homePageUrl}`;
 
   return await sendWhatsAppMessage(phoneNumber, message);
+};
+
+export const sendInfluencerStatusWhatsApp = async (
+  phoneNumber: string,
+  influencerName: string,
+  status: "approved" | "rejected"
+) => {
+  if (status === "approved") {
+    const message = `🎉 *Congratulations, ${influencerName}!*
+
+Your The•PR•God influencer application has been *approved*! ✅
+
+Welcome to our community of creators! 🌟
+
+You can now log in to your dashboard and start exploring exciting brand collaboration opportunities.
+
+👉 *Login here:* ${homePageUrl}
+
+We're excited to have you on board!
+
+- The The•PR•God Team`;
+
+    return await sendWhatsAppMessage(phoneNumber, message);
+  } else {
+    const message = `Hi ${influencerName},
+
+Thank you for your interest in joining The•PR•God.
+
+Unfortunately, we are unable to approve your application at this time. ❌
+
+We receive many applications and have to be selective based on our current brand partnership needs. We encourage you to apply again in the future as our needs evolve.
+
+If you have any questions, please feel free to reach out to our support team.
+
+Best regards,
+The The•PR•God Team`;
+
+    return await sendWhatsAppMessage(phoneNumber, message);
+  }
 };
