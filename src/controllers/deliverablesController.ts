@@ -214,7 +214,7 @@ export const submitCampaignDeliverables = async (
         },
       },
       { new: true, runValidators: true }
-    ).populate("brandId", "name phone");
+    ).populate("userId", "name phone");
 
     if (!updatedCampaign) {
       return res.status(500).json({
