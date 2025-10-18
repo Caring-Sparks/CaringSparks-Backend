@@ -9,7 +9,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const loginUrl = "https://caring-sparks.vercel.app";
+const loginUrl = "https://theprgod.com";
 const logoUrl = `${loginUrl}/Logo.png`;
   const companyName = "The•PR•God";
 
@@ -18,7 +18,7 @@ export const sendInfluencerWelcomeEmail = async (
   plainPassword: string
 ) => {
   const companyName = "The•PR•God";
-  const loginUrl = "https://caring-sparks.vercel.app";
+  const loginUrl = "https://theprgod.com";
 
   const mailOptions = {
     from: `"The•PR•God - Influencer Program" <${process.env.EMAIL_USER}>`,
@@ -609,8 +609,8 @@ export const sendInfluencerWelcomeEmail = async (
       
       <div class="footer-links">
         <a href="${loginUrl}">Login</a>
-        <a href="mailto:theprcompanydigital@gmail.com">Support</a>
-        <a href="https://caring-sparks.vercel.app/">Privacy Policy</a>
+        <a href="mailto:support@theprgod.com">Support</a>
+        <a href="https://theprgod.com/">Privacy Policy</a>
       </div>
       
       <p class="footer-text">
@@ -1368,8 +1368,8 @@ export const sendInfluencerStatusEmail = async (
   rejectionReason?: string
 ) => {
   const companyName = "The•PR•God";
-  const loginUrl = "https://caring-sparks.vercel.app";
-  const supportEmail = "theprcompanydigital@gmail.com";
+  const loginUrl = "https://theprgod.com";
+  const supportEmail = "support@theprgod.com";
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -1761,7 +1761,7 @@ export const sendInfluencerStatusEmail = async (
       <div class="footer-links">
         <a href="${loginUrl}">Platform</a>
         <a href="mailto:${supportEmail}">Support</a>
-        <a href="https://caring-sparks.vercel.app/">Privacy Policy</a>
+        <a href="https://theprgod.com/">Privacy Policy</a>
       </div>
       
       <p class="footer-text">

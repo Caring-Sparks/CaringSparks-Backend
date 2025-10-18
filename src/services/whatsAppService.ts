@@ -42,7 +42,7 @@ const formatPhoneNumber = (phoneNumber: string) => {
     : `whatsapp:${phoneNumber}`;
 };
 
-const homePageUrl = "https://caring-sparks.vercel.app";
+const homePageUrl = "https://theprgod.com";
 
 export const sendWhatsAppMessage = async (
   to: string,

@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-const loginUrl = "https://caring-sparks.vercel.app";
+const loginUrl = "https://theprgod.com";
 const logoUrl = `${loginUrl}/Logo.png`;
 
 export const sendBrandEmail = async (
@@ -9,7 +9,7 @@ export const sendBrandEmail = async (
   brandName: string
 ) => {
   const companyName = "The•PR•God";
-  const loginUrl = "https://caring-sparks.vercel.app";
+  const loginUrl = "https://theprgod.com";
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -286,8 +286,8 @@ export const sendBrandEmail = async (
       
       <div class="footer-links">
         <a href="${loginUrl}/brand">Login</a>
-        <a href="mailto:theprcompanydigital@gmail.com">Support</a>
-        <a href="https://caring-sparks.vercel.app/">Privacy Policy</a>
+        <a href="mailto:support@theprgod.com">Support</a>
+        <a href="https://theprgod.com/">Privacy Policy</a>
       </div>
       
       <p class="footer-text">
@@ -456,8 +456,8 @@ export const sendCampaignStatusEmail = async (
   hasPaid?: boolean
 ) => {
   const companyName = "The•PR•God";
-  const loginUrl = "https://caring-sparks.vercel.app";
-  const supportEmail = "theprcompanydigital@gmail.com";
+  const loginUrl = "https://theprgod.com";
+  const supportEmail = "support@theprgod.com";
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -1053,7 +1053,7 @@ export const sendCampaignStatusEmail = async (
       <div class="footer-links">
         <a href="${loginUrl}/brand">Dashboard</a>
         <a href="mailto:${supportEmail}">Support</a>
-        <a href="https://caring-sparks.vercel.app/privacy">Privacy Policy</a>
+        <a href="https://theprgod.com/privacy">Privacy Policy</a>
       </div>
       
       <p class="footer-text">
@@ -1699,7 +1699,7 @@ export const sendCampaignEmails = async (
         
         <div style="text-align: center; margin-top: 20px;">
           <a href="${
-            process.env.FRONTEND_URL || "https://caring-sparks.vercel.app"
+            process.env.FRONTEND_URL || "https://theprgod.com"
           }/brands" class="cta-button">View Campaign Dashboard</a>
         </div>
       </div>
@@ -1710,7 +1710,7 @@ export const sendCampaignEmails = async (
       <div style="background-color: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
         <p style="margin: 0; color: #dc2626;"><strong>Payment Required:</strong> Please complete your payment to activate influencer matching.</p>
         <a href="${
-          process.env.FRONTEND_URL || "https://caring-sparks.vercel.app"
+          process.env.FRONTEND_URL || "https://theprgod.com"
         }/brands/campaigns" class="cta-button" style="background-color: #ef4444; margin-top: 10px;">Complete Payment</a>
       </div>
       `
@@ -1734,7 +1734,7 @@ export const sendCampaignEmails = async (
     
     <div class="footer">
       <p><strong>The•PR•God</strong> - Connecting Brands with Authentic Voices</p>
-      <p>Need help? Contact us at <a href="mailto:theprcompanydigital@gmail.com">theprcompanydigital@gmail.com</a></p>
+      <p>Need help? Contact us at <a href="mailto:support@theprgod.com">support@theprgod.com</a></p>
       <p>© ${new Date().getFullYear()} The•PR•God. All rights reserved.</p>
     </div>
   </div>

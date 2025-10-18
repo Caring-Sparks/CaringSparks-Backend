@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const companyName = "The•PR•God";
-const frontendUrl = "https://caring-sparks.vercel.app";
+const frontendUrl = "https://theprgod.com";
 const logoUrl = `${frontendUrl}/Logo.png`;
 
 // Password Reset Email Template
@@ -276,7 +276,7 @@ const getPasswordResetEmailTemplate = (
       </div>
       
       <p style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
-        Need help? Contact our support team at theprcompanydigital@gmail.com
+        Need help? Contact our support team at support@theprgod.com
       </p>
     </div>
     
@@ -288,7 +288,7 @@ const getPasswordResetEmailTemplate = (
       
       <div class="footer-links">
         <a href="${frontendUrl}">Login</a>
-        <a href="mailto:theprcompanydigital@gmail.com">Support</a>
+        <a href="mailto:support@theprgod.com">Support</a>
         <a href="${frontendUrl}/privacy">Privacy Policy</a>
       </div>
       
@@ -550,7 +550,7 @@ const getPasswordResetConfirmationTemplate = (email: string) => {
       
       <p style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
         If you didn't make this change or have concerns about your account security,  
-        please contact our support team immediately at theprcompanydigital@gmail.com
+        please contact our support team immediately at support@theprgod.com
       </p>
     </div>
     
@@ -562,8 +562,8 @@ const getPasswordResetConfirmationTemplate = (email: string) => {
       
       <div class="footer-links">
         <a href="${loginUrl}">Login</a>
-        <a href="mailto:theprcompanydigital@gmail.com">Support</a>
-        <a href="${frontendUrl}/privacy">Privacy Policy</a>
+        <a href="mailto:support@theprgod.com">Support</a>
+        <a href="${frontendUrl}">Privacy Policy</a>
       </div>
       
       <p class="footer-text">

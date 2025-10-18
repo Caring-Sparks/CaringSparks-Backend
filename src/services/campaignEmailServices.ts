@@ -41,7 +41,7 @@ const createTransporter = () => {
 };
 
 const companyName = "The•PR•God";
-const loginUrl = "https://caring-sparks.vercel.app";
+const loginUrl = "https://theprgod.com";
 const logoUrl = `${loginUrl}/Logo.png`;
 
 export const sendPaymentConfirmationEmail = async (
@@ -49,7 +49,7 @@ export const sendPaymentConfirmationEmail = async (
   brandName: string,
   campaign: Campaign
 ) => {
-  const supportEmail = "theprcompanydigital@gmail.com";
+  const supportEmail = "support@theprgod.com";
 
   const transporter = createTransporter();
 
@@ -380,7 +380,7 @@ export const sendPaymentConfirmationEmail = async (
       <div class="footer-links">
         <a href="${loginUrl}/brand">Dashboard</a>
         <a href="mailto:${supportEmail}">Support</a>
-        <a href="https://caring-sparks.vercel.app/">Privacy Policy</a>
+        <a href="https://theprgod.com/">Privacy Policy</a>
       </div>
       
       <p class="footer-text">
@@ -407,8 +407,8 @@ export const sendInfluencersAssignedEmail = async (
   assignedInfluencers: Influencer[]
 ) => {
   const companyName = "The•PR•God";
-  const loginUrl = "https://caring-sparks.vercel.app";
-  const supportEmail = "theprcompanydigital@gmail.com";
+  const loginUrl = "https://theprgod.com";
+  const supportEmail = "support@theprgod.com";
 
   const transporter = createTransporter();
 
@@ -787,7 +787,7 @@ export const sendInfluencersAssignedEmail = async (
       <div class="footer-links">
         <a href="${loginUrl}/brand">Dashboard</a>
         <a href="mailto:${supportEmail}">Support</a>
-        <a href="https://caring-sparks.vercel.app/">Privacy Policy</a>
+        <a href="https://theprgod.com/">Privacy Policy</a>
       </div>
       
       <p class="footer-text">
@@ -814,8 +814,8 @@ export const sendInfluencerAssignmentEmail = (
   influencerEmail: string,
   influencerName: string,
   campaign: any,
-  loginUrl = "https://caring-sparks.vercel.app",
-  supportEmail = "theprcompanydigital@gmail.com"
+  loginUrl = "https://theprgod.com",
+  supportEmail = "support@theprgod.com"
 ) => {
   const campaignTitle =
     campaign.title ||
@@ -1241,8 +1241,8 @@ export const sendInfluencerAssignmentEmail = (
       <div class="footer-links">
         <a href="${loginUrl}/influencer">Dashboard</a>
         <a href="mailto:${supportEmail}">Support</a>
-        <a href="https://caring-sparks.vercel.app/help">Help Center</a>
-        <a href="https://caring-sparks.vercel.app/privacy">Privacy Policy</a>
+        <a href="https://theprgod.com/help">Help Center</a>
+        <a href="https://theprgod.com/privacy">Privacy Policy</a>
       </div>
       
       <p class="footer-text">
