@@ -1777,10 +1777,6 @@ export const sendInfluencerStatusEmail = async (
   try {
     // Send both emails
     await Promise.all([transporter.sendMail(influencerMailOptions)]);
-
-    console.log(
-      `${status} email sent successfully to ${influencerName} (${to})`
-    );
   } catch (error) {
     console.error("Error sending influencer status emails:", error);
     throw error;

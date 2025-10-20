@@ -801,9 +801,6 @@ export const sendInfluencersAssignedEmail = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(
-      `Influencers assigned email sent successfully to ${brandName} (${to})`
-    );
   } catch (error) {
     console.error("Error sending influencers assigned email:", error);
     throw error;

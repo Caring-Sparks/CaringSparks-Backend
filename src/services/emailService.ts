@@ -1068,12 +1068,6 @@ export const sendCampaignStatusEmail = async (
 
   try {
     await transporter.sendMail(brandMailOptions);
-
-    console.log(
-      `Campaign ${
-        isPaidAndApproved ? "live" : status
-      } email sent successfully to ${brandName} (${to})`
-    );
   } catch (error) {
     console.error("Error sending campaign status emails:", error);
     throw error;
@@ -1751,25 +1745,17 @@ export const sendCampaignEmails = async (
 
     // Log results
     if (adminResult.status === "fulfilled") {
-      console.log(
-        "✅ Admin notification email sent successfully:",
-        adminResult.value.messageId
-      );
     } else {
       console.error(
-        "❌ Failed to send admin notification email:",
+        "Failed to send admin notification email:",
         adminResult.reason
       );
     }
 
     if (brandResult.status === "fulfilled") {
-      console.log(
-        "✅ Brand confirmation email sent successfully:",
-        brandResult.value.messageId
-      );
     } else {
       console.error(
-        "❌ Failed to send brand confirmation email:",
+        "Failed to send brand confirmation email:",
         brandResult.reason
       );
     }
