@@ -19,9 +19,9 @@ const PORT = process.env.PORT || 5000;
 
 //CORS
 const allowedOrigins = [
-  "http://localhost:3000",
+  // "http://localhost:3000",
   "https://caring-sparks.vercel.app",
-  "https://theprgod.vercel.app"
+  "https://theprgod.com/"
 ];
 
 app.use(
