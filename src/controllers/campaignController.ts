@@ -565,10 +565,10 @@ export const updateCampaign = async (req: Request, res: Response) => {
       }
     });
 
-    const updateObject = {
-      ...req.body,
-      status: "pending",
-    };
+    const updateObject =
+      updatedFields.length > 0 && !req.body.status
+        ? { ...req.body, status: "pending" }
+        : { ...req.body };
 
     const campaign = await Campaign.findByIdAndUpdate(id, updateObject, {
       new: true,
