@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken";
 import {
   sendCampaignEmails,
   sendCampaignStatusEmail,
+  sendCampaignUpdateEmails,
 } from "../services/emailService";
 import {
   sendPaymentConfirmationEmail,
@@ -520,6 +521,7 @@ export const updateCampaign = async (req: Request, res: Response) => {
       }
     }
 
+    // Get the old campaign data before updating
     const oldCampaign = await Campaign.findById(id);
 
     if (!oldCampaign) {
@@ -529,11 +531,51 @@ export const updateCampaign = async (req: Request, res: Response) => {
       });
     }
 
-    const campaign = await Campaign.findByIdAndUpdate(id, req.body, {
+    // Track which fields are being updated
+    const updatedFields: string[] = [];
+    const fieldsToTrack = [
+      "brandName",
+      "email",
+      "brandPhone",
+      "role",
+      "platforms",
+      "location",
+      "additionalLocations",
+      "influencersMin",
+      "influencersMax",
+      "followersRange",
+      "postFrequency",
+      "postDuration",
+      "avgInfluencers",
+      "postCount",
+      "costPerInfluencerPerPost",
+      "totalBaseCost",
+      "platformFee",
+      "totalCost",
+    ];
+
+    fieldsToTrack.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        const oldValue = (oldCampaign as any)[field];
+        const newValue = req.body[field];
+
+        if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
+          updatedFields.push(field);
+        }
+      }
+    });
+
+    const updateObject = {
+      ...req.body,
+      status: "pending",
+    };
+
+    const campaign = await Campaign.findByIdAndUpdate(id, updateObject, {
       new: true,
       runValidators: true,
     });
 
+    // Send status change email if status was explicitly changed
     if (
       req.body.status &&
       req.body.status !== oldCampaign.status &&
@@ -552,7 +594,36 @@ export const updateCampaign = async (req: Request, res: Response) => {
       }
     }
 
-    res.status(200).json({ success: true, data: campaign });
+    // Send update notification emails if there were actual changes
+    // (and it's not just a status change from admin)
+    if (updatedFields.length > 0 && !req.body.status) {
+      try {
+        await sendCampaignUpdateEmails({
+          brandName: campaign?.brandName || oldCampaign.brandName,
+          email: campaign?.email || oldCampaign.email,
+          campaignId: id,
+          oldData: oldCampaign.toObject(),
+          newData: campaign?.toObject() || {},
+          updatedFields,
+        });
+
+        console.log(
+          `✅ Update notification emails sent for ${updatedFields.length} changes`
+        );
+      } catch (emailError) {
+        console.error("Failed to send campaign update emails:", emailError);
+        // Don't fail the request if email fails
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: campaign,
+      message:
+        updatedFields.length > 0
+          ? `Campaign updated successfully. ${updatedFields.length} field(s) changed.`
+          : "Campaign updated successfully.",
+    });
   } catch (error) {
     if (error instanceof mongoose.Error.ValidationError) {
       return res.status(400).json({

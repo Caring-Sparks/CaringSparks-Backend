@@ -1783,3 +1783,577 @@ export const sendCampaignEmails = async (
     throw error;
   }
 };
+
+// Add this function to your email file (after sendCampaignEmails)
+
+interface CampaignUpdateData {
+  brandName: string;
+  email: string;
+  campaignId: string;
+  oldData: any;
+  newData: any;
+  updatedFields: string[];
+}
+
+export const sendCampaignUpdateEmails = async (
+  updateData: CampaignUpdateData
+): Promise<EmailResults> => {
+  try {
+    const { brandName, email, campaignId, oldData, newData, updatedFields } =
+      updateData;
+    const companyName = "The•PR•God";
+    const loginUrl = "https://theprgod.com";
+
+    // Helper function to format field names
+    const formatFieldName = (field: string): string => {
+      return field
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, (str) => str.toUpperCase())
+        .trim();
+    };
+
+    // Helper function to format field values
+    const formatValue = (value: any): string => {
+      if (Array.isArray(value)) {
+        return value.join(", ");
+      }
+      if (typeof value === "number") {
+        return value.toLocaleString();
+      }
+      if (typeof value === "boolean") {
+        return value ? "Yes" : "No";
+      }
+      return String(value);
+    };
+
+    // Generate changes HTML
+    const changesHtml = updatedFields
+      .map((field) => {
+        const oldValue = oldData[field];
+        const newValue = newData[field];
+
+        return `
+        <div class="change-item">
+          <div class="change-field">${formatFieldName(field)}</div>
+          <div class="change-values">
+            <div class="old-value">
+              <span class="value-label">Previous:</span>
+              <span class="value-text">${
+                formatValue(oldValue) || "Not set"
+              }</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="new-value">
+              <span class="value-label">Updated:</span>
+              <span class="value-text">${
+                formatValue(newValue) || "Not set"
+              }</span>
+            </div>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
+    // Admin Email Template
+    const adminUpdateMailOptions = {
+      from: `"The•PR•God System" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER,
+      subject: `Campaign Updated: ${brandName} - The•PR•God`,
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campaign Updated</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+      font-family: 'Source Sans Pro', Arial, sans-serif;
+      line-height: 1.6;
+      color: #475569;
+    }
+    .email-container {
+      max-width: 650px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #ffffff;
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .content {
+      padding: 30px 20px;
+    }
+    .update-summary {
+      background-color: #fef3c7;
+      border: 2px solid #f59e0b;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .summary-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #92400e;
+      margin: 0 0 10px 0;
+    }
+    .changes-container {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .changes-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #374151;
+      margin: 0 0 15px 0;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 8px;
+    }
+    .change-item {
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 12px;
+    }
+    .change-field {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .change-values {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .old-value, .new-value {
+      flex: 1;
+      min-width: 120px;
+    }
+    .value-label {
+      display: block;
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .value-text {
+      display: block;
+      font-weight: 500;
+      color: #1f2937;
+    }
+    .old-value .value-text {
+      color: #dc2626;
+      text-decoration: line-through;
+    }
+    .new-value .value-text {
+      color: #059669;
+      font-weight: 600;
+    }
+    .arrow {
+      font-size: 20px;
+      color: #9ca3af;
+    }
+    .campaign-info {
+      background-color: #f1f5f9;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .info-row {
+      margin-bottom: 8px;
+    }
+    .info-label {
+      font-weight: 600;
+      color: #374151;
+      display: inline-block;
+      width: 120px;
+    }
+    .info-value {
+      color: #1f2937;
+      font-weight: 500;
+    }
+    .timestamp {
+      background-color: #e0f2fe;
+      border-left: 4px solid #0891b2;
+      padding: 12px 16px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .footer {
+      background-color: #f8fafc;
+      padding: 20px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .highlight {
+      background-color: #fef3c7;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #92400e;
+      font-weight: 600;
+    }
+    @media only screen and (max-width: 600px) {
+      .change-values {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .arrow {
+        text-align: center;
+        transform: rotate(90deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>📝 Campaign Updated</h1>
+    </div>
+    
+    <div class="content">
+      <p>The campaign <span class="highlight">${brandName}</span> has been updated with ${
+        updatedFields.length
+      } change${updatedFields.length !== 1 ? "s" : ""}.</p>
+      
+      <div class="update-summary">
+        <div class="summary-title">Update Summary</div>
+        <p style="margin: 5px 0 0 0; color: #92400e;">
+          ${updatedFields.length} field${
+        updatedFields.length !== 1 ? "s" : ""
+      } modified
+        </p>
+      </div>
+
+      <div class="campaign-info">
+        <div class="info-row">
+          <span class="info-label">Brand Name:</span>
+          <span class="info-value">${brandName}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Email:</span>
+          <span class="info-value">${email}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Campaign ID:</span>
+          <span class="info-value">${campaignId}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status:</span>
+          <span class="info-value" style="color: #f59e0b; font-weight: 600;">⏳ Pending Review</span>
+        </div>
+      </div>
+      
+      <div class="changes-container">
+        <div class="changes-title">Changes Made:</div>
+        ${changesHtml}
+      </div>
+      
+      <div class="timestamp">
+        <p style="margin: 0;">
+          <strong>Updated:</strong> ${new Date().toLocaleString()}
+        </p>
+      </div>
+      
+      <p>The campaign status has been reset to <strong>Pending</strong> and awaits your review.</p>
+      
+      <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">
+        This is an automated notification from the The•PR•God campaign system.
+      </p>
+    </div>
+    
+    <div class="footer">
+      <p>The•PR•God Admin Notifications</p>
+      <p>© ${new Date().getFullYear()} The•PR•God. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+    };
+
+    // Brand Confirmation Email Template
+    const brandUpdateMailOptions = {
+      from: `"The•PR•God Team" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `Campaign Updated Successfully - ${brandName} - The•PR•God`,
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campaign Updated</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+      font-family: 'Source Sans Pro', Arial, sans-serif;
+      line-height: 1.6;
+      color: #475569;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #ffffff;
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .content {
+      padding: 30px 20px;
+    }
+    .success-message {
+      background-color: #f0fdf4;
+      border: 2px solid #10b981;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .success-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .changes-container {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .changes-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #374151;
+      margin: 0 0 15px 0;
+    }
+    .change-item {
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 12px;
+    }
+    .change-field {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .change-values {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .old-value, .new-value {
+      flex: 1;
+      min-width: 120px;
+    }
+    .value-label {
+      display: block;
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .value-text {
+      display: block;
+      font-weight: 500;
+      color: #1f2937;
+    }
+    .old-value .value-text {
+      color: #dc2626;
+      text-decoration: line-through;
+    }
+    .new-value .value-text {
+      color: #059669;
+      font-weight: 600;
+    }
+    .arrow {
+      font-size: 20px;
+      color: #9ca3af;
+    }
+    .review-note {
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .review-note p {
+      margin: 0;
+      color: #92400e;
+      font-size: 14px;
+    }
+    .next-steps {
+      background-color: #eff6ff;
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .cta-button {
+      background-color: #4f46e5;
+      color: white !important;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      display: inline-block;
+      margin: 10px 0;
+    }
+    .footer {
+      background-color: #f8fafc;
+      padding: 20px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .highlight {
+      background-color: #ddd6fe;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #5b21b6;
+      font-weight: 600;
+    }
+    @media only screen and (max-width: 600px) {
+      .change-values {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .arrow {
+        text-align: center;
+        transform: rotate(90deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>Campaign Updated Successfully</h1>
+    </div>
+    
+    <div class="content">
+      <div class="success-message">
+        <div class="success-icon">✅</div>
+        <h3 style="margin: 0; color: #10b981;">Your changes have been saved!</h3>
+        <p style="margin: 10px 0 0 0;">Campaign is now pending review</p>
+      </div>
+
+      <p>Dear <span class="highlight">${brandName}</span>,</p>
+      
+      <p>Your campaign has been successfully updated. We've recorded ${
+        updatedFields.length
+      } change${
+        updatedFields.length !== 1 ? "s" : ""
+      } to your campaign details.</p>
+      
+      <div class="changes-container">
+        <div class="changes-title">Summary of Changes:</div>
+        ${changesHtml}
+      </div>
+
+      <div class="review-note">
+        <p>
+          <strong>⏳ Review in Progress:</strong> Your campaign status has been reset to "Pending" and will be reviewed by our team. You'll receive an email notification once the review is complete.
+        </p>
+      </div>
+      
+      <div class="next-steps">
+        <h4 style="margin-top: 0; color: #1e40af;">What Happens Next?</h4>
+        <ul style="margin: 0; padding-left: 20px;">
+          <li><strong>Review Process:</strong> Our team will review your updated campaign within 24-48 hours</li>
+          <li><strong>Email Notification:</strong> You'll receive an email once the review is complete</li>
+          <li><strong>Dashboard Updates:</strong> Track your campaign status in real-time on your dashboard</li>
+          <li><strong>Questions?</strong> Our support team is available to help with any concerns</li>
+        </ul>
+        
+        <div style="text-align: center; margin-top: 20px;">
+          <a href="${loginUrl}/brands/campaigns" class="cta-button">View Campaign Dashboard</a>
+        </div>
+      </div>
+      
+      <p>If you have any questions about these changes or need to make additional updates, please don't hesitate to contact our support team.</p>
+      
+      <p style="margin-top: 30px;">
+        Best regards,<br>
+        <strong>The The•PR•God Team</strong>
+      </p>
+      
+      <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">
+        Campaign ID: ${campaignId}<br>
+        Updated: ${new Date().toLocaleString()}
+      </p>
+    </div>
+    
+    <div class="footer">
+      <p><strong>The•PR•God</strong> - Connecting Brands with Authentic Voices</p>
+      <p>Need help? Contact us at <a href="mailto:support@theprgod.com">support@theprgod.com</a></p>
+      <p>© ${new Date().getFullYear()} The•PR•God. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+    };
+
+    const [adminResult, brandResult] = await Promise.allSettled([
+      transporter.sendMail(adminUpdateMailOptions),
+      transporter.sendMail(brandUpdateMailOptions),
+    ]);
+
+    return {
+      adminEmailSent: adminResult.status === "fulfilled",
+      brandEmailSent: brandResult.status === "fulfilled",
+      adminEmailId:
+        adminResult.status === "fulfilled" ? adminResult.value.messageId : null,
+      brandEmailId:
+        brandResult.status === "fulfilled" ? brandResult.value.messageId : null,
+      errors: {
+        admin:
+          adminResult.status === "rejected"
+            ? (adminResult.reason as Error)
+            : null,
+        brand:
+          brandResult.status === "rejected"
+            ? (brandResult.reason as Error)
+            : null,
+      },
+    };
+  } catch (error) {
+    console.error("❌ Error in sendCampaignUpdateEmails function:", error);
+    throw error;
+  }
+};
