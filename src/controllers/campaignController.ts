@@ -1181,7 +1181,6 @@ export const respondToCampaignAssignment = async (
             );
           } catch (whatsappError) {
             console.error("WhatsApp notification failed:", whatsappError);
-            // Continue execution - email is more critical
           }
         } else {
           console.log("Brand has no phone number for WhatsApp");
@@ -1197,10 +1196,8 @@ export const respondToCampaignAssignment = async (
               campaign as any,
               message
             );
-            console.log(`Acceptance email sent to ${brand.email}`);
           } catch (emailError) {
             console.error("Email notification failed:", emailError);
-            // Don't fail the request if email fails
           }
         } else {
           console.log("Brand has no email address");
@@ -1222,7 +1219,6 @@ export const respondToCampaignAssignment = async (
             );
           } catch (whatsappError) {
             console.error("WhatsApp notification failed:", whatsappError);
-            // Continue execution - email is more critical
           }
         } else {
           console.log("Brand has no phone number for WhatsApp");
@@ -1238,7 +1234,6 @@ export const respondToCampaignAssignment = async (
               campaign as any,
               message
             );
-            console.log(`Decline email sent to ${brand.email}`);
           } catch (emailError) {
             console.error("Email notification failed:", emailError);
             // Don't fail the request if email fails
@@ -1249,7 +1244,6 @@ export const respondToCampaignAssignment = async (
       }
     } catch (notificationError) {
       console.error("Failed to send notifications:", notificationError);
-      // Log but don't fail the request - the campaign response was still recorded
     }
 
     res.status(200).json({
