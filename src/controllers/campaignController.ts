@@ -14,6 +14,8 @@ import {
   sendPaymentConfirmationEmail,
   sendInfluencersAssignedEmail,
   sendInfluencerAssignmentEmail,
+  sendCampaignAcceptedEmail,
+  sendCampaignDeclinedEmail,
 } from "../services/campaignEmailServices";
 import Influencer from "../models/Influencer";
 import nodemailer from "nodemailer";
@@ -1074,7 +1076,6 @@ export const getAssignedCampaigns = async (req: Request, res: Response) => {
   }
 };
 
-// respond to the assigned campaigns
 export const respondToCampaignAssignment = async (
   req: Request,
   res: Response
@@ -1138,7 +1139,7 @@ export const respondToCampaignAssignment = async (
         },
       },
       { new: true, runValidators: true }
-    ).populate("userId", "brandName brandPhone");
+    ).populate("userId", "brandName brandPhone email");
 
     if (!campaign) {
       return res.status(404).json({
@@ -1154,43 +1155,112 @@ export const respondToCampaignAssignment = async (
 
       if (!brand) {
         console.error("Brand not found for campaign");
-        return;
+        return res.status(500).json({
+          success: false,
+          message: "Brand information not found for this campaign.",
+        });
       }
 
+      const brandName = brand.brandName || "Brand";
+      const influencerName = influencer.name;
+
       if (status === "accepted") {
+        // Send WhatsApp notification
         if (brand.brandPhone) {
-          const whatsappResult = await sendCampaignResponseWhatsApp(
-            brand.brandPhone,
-            brand.brandName || "Brand",
-            influencer.name,
-            campaign.brandName,
-            "accepted",
-            message
-          );
+          try {
+            await sendCampaignResponseWhatsApp(
+              brand.brandPhone,
+              brandName,
+              influencerName,
+              campaign.brandName,
+              "accepted",
+              message
+            );
+            console.log(
+              `WhatsApp sent to ${brand.brandPhone} for campaign acceptance`
+            );
+          } catch (whatsappError) {
+            console.error("WhatsApp notification failed:", whatsappError);
+            // Continue execution - email is more critical
+          }
         } else {
-          console.log("Brand has no phone number");
+          console.log("Brand has no phone number for WhatsApp");
+        }
+
+        // Send Email notification
+        if (brand.email) {
+          try {
+            await sendCampaignAcceptedEmail(
+              brand.email,
+              brandName,
+              influencerName,
+              campaign as any,
+              message
+            );
+            console.log(`Acceptance email sent to ${brand.email}`);
+          } catch (emailError) {
+            console.error("Email notification failed:", emailError);
+            // Don't fail the request if email fails
+          }
+        } else {
+          console.log("Brand has no email address");
         }
       } else {
+        // Send WhatsApp notification
         if (brand.brandPhone) {
-          const whatsappResult = await sendCampaignResponseWhatsApp(
-            brand.brandPhone,
-            brand.brandName || "Brand",
-            influencer.name,
-            campaign.brandName,
-            "declined",
-            message
-          );
+          try {
+            await sendCampaignResponseWhatsApp(
+              brand.brandPhone,
+              brandName,
+              influencerName,
+              campaign.brandName,
+              "declined",
+              message
+            );
+            console.log(
+              `WhatsApp sent to ${brand.brandPhone} for campaign decline`
+            );
+          } catch (whatsappError) {
+            console.error("WhatsApp notification failed:", whatsappError);
+            // Continue execution - email is more critical
+          }
         } else {
-          console.log("Brand has no phone number");
+          console.log("Brand has no phone number for WhatsApp");
+        }
+
+        // Send Email notification
+        if (brand.email) {
+          try {
+            await sendCampaignDeclinedEmail(
+              brand.email,
+              brandName,
+              influencerName,
+              campaign as any,
+              message
+            );
+            console.log(`Decline email sent to ${brand.email}`);
+          } catch (emailError) {
+            console.error("Email notification failed:", emailError);
+            // Don't fail the request if email fails
+          }
+        } else {
+          console.log("Brand has no email address");
         }
       }
     } catch (notificationError) {
-      console.error("Failed to send notification:", notificationError);
+      console.error("Failed to send notifications:", notificationError);
+      // Log but don't fail the request - the campaign response was still recorded
     }
 
     res.status(200).json({
       success: true,
-      message: `Campaign ${status} successfully.`,
+      message: `Campaign ${status} successfully. Brand has been notified via ${
+        (campaign.userId as any).email ? "email" : ""
+      }${
+        (campaign.userId as any).email && (campaign.userId as any).brandPhone
+          ? " and "
+          : ""
+      }${(campaign.userId as any).brandPhone ? "WhatsApp" : ""}.`,
       data: campaign,
     });
   } catch (err: any) {

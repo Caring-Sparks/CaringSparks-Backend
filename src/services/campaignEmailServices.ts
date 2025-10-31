@@ -1251,3 +1251,787 @@ export const sendInfluencerAssignmentEmail = (
 </html>`,
   };
 };
+
+export const sendCampaignAcceptedEmail = async (
+  to: string,
+  brandName: string,
+  influencerName: string,
+  campaign: Campaign,
+  message?: string
+) => {
+  const supportEmail = "support@theprgod.com";
+  const transporter = createTransporter();
+
+  const campaignTitle =
+    campaign.title || `${campaign.role || "Campaign"} for ${brandName}`;
+
+  const subject = `✅ Campaign Accepted - ${influencerName} is Ready to Start!`;
+
+  const mailOptions = {
+    from: `"The•PR•God Team" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: #f1f5f9;
+      font-family: 'Source Sans Pro', Arial, sans-serif;
+      line-height: 1.6;
+      color: #475569;
+    }
+
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      width: 100%;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #10b981;
+    }
+
+    .welcome-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .content {
+      padding: 30px 20px;
+    }
+
+    .intro-text {
+      font-size: 16px;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 25px;
+      line-height: 1.7;
+    }
+
+    .status-card {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      border: 2px solid #10b981;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    .status-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #065f46;
+      margin-bottom: 15px;
+    }
+
+    .status-message {
+      color: #047857;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .influencer-card {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+      border-left: 4px solid #10b981;
+    }
+
+    .influencer-card h3 {
+      color: #374151;
+      margin-top: 0;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .influencer-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #10b981;
+      margin-bottom: 10px;
+    }
+
+    .message-box {
+      background-color: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 15px 0;
+      font-style: italic;
+      color: #0c4a6e;
+    }
+
+    .campaign-details {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+
+    .campaign-details h3 {
+      color: #374151;
+      margin-top: 0;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-label {
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .detail-value {
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .next-steps {
+      background-color: #fffbeb;
+      border: 2px solid #f59e0b;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+
+    .next-steps h3 {
+      color: #d97706;
+      margin-top: 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .steps-list {
+      color: #92400e;
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .steps-list li {
+      margin-bottom: 8px;
+    }
+
+    .cta-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      margin: 0 10px 10px 0;
+    }
+
+    .cta-button-secondary {
+      display: inline-block;
+      background: #ffffff;
+      color: #10b981 !important;
+      text-decoration: none;
+      padding: 14px 28px;
+      border: 2px solid #10b981;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      margin: 0 10px 10px 0;
+    }
+
+    .footer {
+      background-color: #f8fafc;
+      padding: 20px 15px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .footer-text {
+      color: #64748b;
+      font-size: 13px;
+      margin: 0 0 10px 0;
+    }
+
+    .footer-links {
+      margin: 10px 0;
+    }
+
+    .footer-links a {
+      color: #10b981;
+      text-decoration: none;
+      margin: 0 10px;
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+
+    @media only screen and (max-width: 600px) {
+      .welcome-title {
+        font-size: 22px !important;
+      }
+      .intro-text {
+        font-size: 15px !important;
+      }
+      .cta-button, .cta-button-secondary {
+        display: block !important;
+        width: calc(100% - 40px) !important;
+        margin: 10px 0 !important;
+      }
+      .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
+      <h1 class="welcome-title">Campaign Accepted! 🎉</h1>
+    </div>
+    
+    <div class="content">
+      <p class="intro-text">
+        Excellent news, <strong>${brandName}</strong>! <strong>${influencerName}</strong> has accepted your campaign assignment and is ready to start creating amazing content for your brand.
+      </p>
+      
+      <div class="status-card">
+        <h2 class="status-title">✅ ${influencerName} Accepted</h2>
+        <div class="status-message">
+          Your campaign collaboration is now confirmed. The influencer is ready to review the campaign brief and start content creation!
+        </div>
+      </div>
+      
+      <div class="influencer-card">
+        <h3>👤 Influencer Response</h3>
+        <div class="influencer-name">${influencerName}</div>
+        <div style="color: #10b981; font-weight: 600; margin-bottom: 10px;">Status: ACCEPTED ✓</div>
+        ${
+          message
+            ? `<div class="message-box">
+          <strong>Message from ${influencerName}:</strong><br/>
+          "${message}"
+        </div>`
+            : ""
+        }
+      </div>
+      
+      <div class="campaign-details">
+        <h3>📋 Campaign Details</h3>
+        <div class="detail-row">
+          <span class="detail-label">Campaign:</span>
+          <span class="detail-value">${campaignTitle}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Type:</span>
+          <span class="detail-value">${campaign.role || "N/A"}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Platforms:</span>
+          <span class="detail-value">${
+            campaign.platforms?.join(", ") || "N/A"
+          }</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Campaign ID:</span>
+          <span class="detail-value">#${campaign._id
+            .toString()
+            .slice(-8)
+            .toUpperCase()}</span>
+        </div>
+      </div>
+      
+      <div class="next-steps">
+        <h3>🚀 Next Steps</h3>
+        <ul class="steps-list">
+          <li><strong>Influencer reviews campaign brief</strong> - They'll study your brand guidelines and requirements</li>
+          <li><strong>Content planning begins</strong> - The influencer will start planning their creative approach</li>
+          <li><strong>Revisions (if needed)</strong> - Collaborate on any adjustments to ensure perfection</li>
+          <li><strong>Performance tracking</strong> - Monitor engagement and results through your dashboard</li>
+        </ul>
+      </div>
+      
+      <div class="cta-container">
+        <a href="${loginUrl}/brand/campaigns/${campaign._id}" class="cta-button">
+          View Campaign Dashboard
+        </a>
+        <a href="${loginUrl}/brand/messages" class="cta-button-secondary">
+          View ${influencerName}
+        </a>
+      </div>
+      
+      <div style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0; color: #065f46; font-size: 14px; font-weight: 500;">
+          💚 <strong>Great collaboration ahead!</strong> Stay in touch with ${influencerName} through the platform messaging system for the best results.
+        </p>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p class="footer-text">
+        This email was sent regarding campaign "${campaignTitle}" on The•PR•God.
+      </p>
+      
+      <div class="footer-links">
+        <a href="${loginUrl}/brand">Dashboard</a>
+        <a href="mailto:${supportEmail}">Support</a>
+        <a href="https://theprgod.com/">Privacy Policy</a>
+      </div>
+      
+      <p class="footer-text">
+        © ${new Date().getFullYear()} The•PR•God. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending campaign accepted email:", error);
+    throw error;
+  }
+};
+
+export const sendCampaignDeclinedEmail = async (
+  to: string,
+  brandName: string,
+  influencerName: string,
+  campaign: Campaign,
+  message?: string
+) => {
+  const supportEmail = "support@theprgod.com";
+  const transporter = createTransporter();
+
+  const campaignTitle =
+    campaign.title || `${campaign.role || "Campaign"} for ${brandName}`;
+
+  const subject = `Campaign Response - ${influencerName} Declined Assignment`;
+
+  const mailOptions = {
+    from: `"The•PR•God Team" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: #f1f5f9;
+      font-family: 'Source Sans Pro', Arial, sans-serif;
+      line-height: 1.6;
+      color: #475569;
+    }
+
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      width: 100%;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #ef4444;
+    }
+
+    .welcome-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .content {
+      padding: 30px 20px;
+    }
+
+    .intro-text {
+      font-size: 16px;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 25px;
+      line-height: 1.7;
+    }
+
+    .status-card {
+      background-color: #fee2e2;
+      border: 2px solid #ef4444;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    .status-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #dc2626;
+      margin-bottom: 15px;
+    }
+
+    .status-message {
+      color: #991b1b;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .influencer-card {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+      border-left: 4px solid #ef4444;
+    }
+
+    .influencer-card h3 {
+      color: #374151;
+      margin-top: 0;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .influencer-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ef4444;
+      margin-bottom: 10px;
+    }
+
+    .message-box {
+      background-color: #fef3c7;
+      border: 1px solid #fbbf24;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 15px 0;
+      font-style: italic;
+      color: #78350f;
+    }
+
+    .campaign-details {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+
+    .campaign-details h3 {
+      color: #374151;
+      margin-top: 0;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-label {
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .detail-value {
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .next-steps {
+      background-color: #dbeafe;
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+
+    .next-steps h3 {
+      color: #1d4ed8;
+      margin-top: 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .steps-list {
+      color: #1e3a8a;
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .steps-list li {
+      margin-bottom: 8px;
+    }
+
+    .cta-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      margin: 0 10px 10px 0;
+    }
+
+    .cta-button-secondary {
+      display: inline-block;
+      background: #ffffff;
+      color: #3b82f6 !important;
+      text-decoration: none;
+      padding: 14px 28px;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      margin: 0 10px 10px 0;
+    }
+
+    .footer {
+      background-color: #f8fafc;
+      padding: 20px 15px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .footer-text {
+      color: #64748b;
+      font-size: 13px;
+      margin: 0 0 10px 0;
+    }
+
+    .footer-links {
+      margin: 10px 0;
+    }
+
+    .footer-links a {
+      color: #3b82f6;
+      text-decoration: none;
+      margin: 0 10px;
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+
+    @media only screen and (max-width: 600px) {
+      .welcome-title {
+        font-size: 22px !important;
+      }
+      .intro-text {
+        font-size: 15px !important;
+      }
+      .cta-button, .cta-button-secondary {
+        display: block !important;
+        width: calc(100% - 40px) !important;
+        margin: 10px 0 !important;
+      }
+      .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
+      <h1 class="welcome-title">Campaign Response Update</h1>
+    </div>
+    
+    <div class="content">
+      <p class="intro-text">
+        Hello <strong>${brandName}</strong>, we wanted to inform you that <strong>${influencerName}</strong> has declined the assignment for your "${campaignTitle}" campaign.
+      </p>
+      
+      <div class="status-card">
+        <h2 class="status-title">❌ Assignment Declined</h2>
+        <div class="status-message">
+          ${influencerName} is unable to participate in this campaign at this time. Don't worry - we'll help you find the perfect alternative!
+        </div>
+      </div>
+      
+      <div class="influencer-card">
+        <h3>👤 Influencer Response</h3>
+        <div class="influencer-name">${influencerName}</div>
+        <div style="color: #ef4444; font-weight: 600; margin-bottom: 10px;">Status: DECLINED</div>
+        ${
+          message
+            ? `<div class="message-box">
+          <strong>Reason provided:</strong><br/>
+          "${message}"
+        </div>`
+            : '<div style="color: #64748b; font-size: 14px; font-style: italic;">No specific reason was provided.</div>'
+        }
+      </div>
+      
+      <div class="campaign-details">
+        <h3>📋 Campaign Details</h3>
+        <div class="detail-row">
+          <span class="detail-label">Campaign:</span>
+          <span class="detail-value">${campaignTitle}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Type:</span>
+          <span class="detail-value">${campaign.role || "N/A"}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Platforms:</span>
+          <span class="detail-value">${
+            campaign.platforms?.join(", ") || "N/A"
+          }</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Campaign ID:</span>
+          <span class="detail-value">#${campaign._id
+            .toString()
+            .slice(-8)
+            .toUpperCase()}</span>
+        </div>
+      </div>
+      
+      <div class="next-steps">
+        <h3>💡 What's Next?</h3>
+        <ul class="steps-list">
+          <li><strong>We'll find a replacement</strong> - Our team will search for another qualified influencer</li>
+          <li><strong>Adjust campaign criteria</strong> - You can modify requirements to expand your pool</li>
+          <li><strong>Contact our team</strong> - We're here to help find the perfect fit for your campaign</li>
+          <li><strong>No additional charges</strong> - Replacements are part of our service</li>
+        </ul>
+      </div>
+      
+      <div class="cta-container">
+        <a href="${loginUrl}/brand/campaigns/${campaign._id}" class="cta-button">
+          View Campaign Dashboard
+        </a>
+        <a href="mailto:${supportEmail}" class="cta-button-secondary">
+          Contact Support Team
+        </a>
+      </div>
+      
+      <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 500;">
+          ⚡ <strong>Don't worry!</strong> Campaign declines happen occasionally. We'll help you find an even better match for your brand.
+        </p>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p class="footer-text">
+        This email was sent regarding campaign "${campaignTitle}" on The•PR•God.
+      </p>
+      
+      <div class="footer-links">
+        <a href="${loginUrl}/brand">Dashboard</a>
+        <a href="mailto:${supportEmail}">Support</a>
+        <a href="https://theprgod.com/">Privacy Policy</a>
+      </div>
+      
+      <p class="footer-text">
+        © ${new Date().getFullYear()} The•PR•God. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending campaign declined email:", error);
+    throw error;
+  }
+};
