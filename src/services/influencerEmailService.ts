@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 
 const loginUrl = "https://theprgod.com";
 const logoUrl = `${loginUrl}/Logo.png`;
-  const companyName = "The•PR•God";
+const companyName = "The•PR•God";
 
 export const sendInfluencerWelcomeEmail = async (
   influencer: IInfluencer,
@@ -388,6 +388,18 @@ export const sendInfluencerWelcomeEmail = async (
               influencer.whatsapp || "Not provided"
             }</span>
           </div>
+          <div class="info-item">
+            <span class="info-label">Earnings per Post</span>
+            <span class="info-value">${
+              influencer.earningsPerPostNaira || "Not provided"
+            }</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Total Earnings</span>
+            <span class="info-value">${
+              influencer.maxMonthlyEarningsNaira || "Not provided"
+            }</span>
+          </div>
         </div>
         
         <div class="credential-row" style="margin-top: 15px;">
@@ -584,13 +596,6 @@ export const sendInfluencerWelcomeEmail = async (
           <strong>⏳ Next Steps:</strong> We'll review your application within 2-3 business days. 
           Please change your password after your first login and keep your credentials secure.
         </p>
-      </div>
-      
-      <!-- Call to Action -->
-      <div class="cta-container">
-        <a href="${loginUrl}/influencer" class="cta-button">
-          Access Your Influencer Dashboard
-        </a>
       </div>
       
       <p style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">

@@ -524,14 +524,8 @@ export const updateInfluencer = async (
                 },
                 async (error, result) => {
                   if (error) {
-                    console.log(`${platform} upload error:`, error);
                     reject(error);
                   } else {
-                    console.log(
-                      `${platform} upload success:`,
-                      result?.secure_url
-                    );
-
                     const existingPlatformData = (existingInfluencer as any)[
                       platform
                     ];
@@ -544,7 +538,6 @@ export const updateInfluencer = async (
                           .join("/")
                           .replace(/\.[^/.]+$/, "");
                         await cloudinary.uploader.destroy(publicId);
-                        console.log(`Deleted old ${platform} proof file`);
                       } catch (deleteError) {
                         console.error(
                           `Failed to delete old ${platform} proof file:`,
@@ -581,11 +574,8 @@ export const updateInfluencer = async (
           },
           async (error, result) => {
             if (error) {
-              console.log("Audience upload error:", error);
               reject(error);
             } else {
-              console.log("Audience upload success:", result?.secure_url);
-
               if (existingInfluencer.audienceProofUrl) {
                 try {
                   const oldUrl = existingInfluencer.audienceProofUrl;
@@ -595,7 +585,6 @@ export const updateInfluencer = async (
                     .join("/")
                     .replace(/\.[^/.]+$/, "");
                   await cloudinary.uploader.destroy(publicId);
-                  console.log("Deleted old audience proof file");
                 } catch (deleteError) {
                   console.error(
                     "Failed to delete old audience proof file:",
@@ -616,11 +605,7 @@ export const updateInfluencer = async (
 
     if (uploadPromises.length > 0) {
       try {
-        console.log(
-          `Starting ${uploadPromises.length} file uploads for update`
-        );
         await Promise.all(uploadPromises);
-        console.log("All file uploads completed successfully");
       } catch (uploadError) {
         console.error("File upload error during update:", uploadError);
         res.status(500).json({
@@ -888,7 +873,6 @@ export const deleteInfluencer = async (req: Request, res: Response) => {
           .replace(/\.[^/.]+$/, "");
 
         await cloudinary.uploader.destroy(publicId);
-        console.log(`Deleted file from Cloudinary: ${publicId}`);
       } catch (error) {
         console.error(`Failed to delete file from Cloudinary: ${url}`, error);
       }

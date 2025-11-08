@@ -1,5 +1,3 @@
-//This controller houses all the brand associated APIs
-
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -8,7 +6,6 @@ import Campaign from "../models/Campaign";
 import { sendBrandEmail } from "../services/emailService";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
-import type { Express } from "express";
 import mongoose from "mongoose";
 
 // Configure Cloudinary
@@ -19,22 +16,26 @@ cloudinary.config({
 });
 
 const storage = multer.memoryStorage();
-// cloudinary upload config
+
+// Support both images and videos with increased file size
 export const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit for videos
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
+    if (
+      file.mimetype.startsWith("image/") ||
+      file.mimetype.startsWith("video/")
+    ) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed"));
+      cb(new Error("Only image and video files are allowed"));
     }
   },
 });
 
-// Upload campaign materials
+// Upload campaign materials (images and videos)
 export const uploadCampaignMaterials = async (req: Request, res: Response) => {
   try {
     const { campaignId } = req.body;
@@ -54,8 +55,10 @@ export const uploadCampaignMaterials = async (req: Request, res: Response) => {
       });
     }
 
-    const files = (req.files as { [fieldname: string]: Express.Multer.File[] })
-      ?.images;
+    const files =
+      (req.files as { [fieldname: string]: Express.Multer.File[] })?.media ||
+      (req.files as { [fieldname: string]: Express.Multer.File[] })?.images;
+
     if (!files || files.length === 0) {
       return res.status(400).json({
         success: false,
@@ -63,40 +66,125 @@ export const uploadCampaignMaterials = async (req: Request, res: Response) => {
       });
     }
 
-    let materialsData: Array<{ description: string }> = [];
+    // Parse materials data (descriptions and file types)
+    let materialsData: Array<{
+      description: string;
+      fileType?: string;
+      contentType: string;
+    }> = [];
 
     if (req.body.materials && Array.isArray(req.body.materials)) {
       materialsData = req.body.materials.map((material: any) => ({
         description: material.description || "",
+        fileType: material.fileType || "image",
+        contentType: material.contentType || "",
       }));
     } else {
+      const descriptionMap: {
+        [key: number]: {
+          description?: string;
+          fileType?: string;
+          contentType?: string;
+        };
+      } = {};
+
       Object.keys(req.body).forEach((key) => {
-        const match = key.match(/materials\[(\d+)\]\[description\]/);
-        if (match) {
-          const index = Number.parseInt(match[1]);
-          materialsData[index] = { description: req.body[key] };
+        const descMatch = key.match(/materials\[(\d+)\]\[description\]/);
+        const typeMatch = key.match(/materials\[(\d+)\]\[fileType\]/);
+        const contentTypeMatch = key.match(/materials\[(\d+)\]\[contentType\]/);
+
+        if (descMatch) {
+          const index = Number.parseInt(descMatch[1]);
+          if (!descriptionMap[index]) descriptionMap[index] = {};
+          descriptionMap[index].description = req.body[key];
+        }
+
+        if (typeMatch) {
+          const index = Number.parseInt(typeMatch[1]);
+          if (!descriptionMap[index]) descriptionMap[index] = {};
+          descriptionMap[index].fileType = req.body[key];
+        }
+
+        if (contentTypeMatch) {
+          const index = Number.parseInt(contentTypeMatch[1]);
+          if (!descriptionMap[index]) descriptionMap[index] = {};
+          descriptionMap[index].contentType = req.body[key];
         }
       });
+
+      // Convert map to array
+      Object.keys(descriptionMap).forEach((key) => {
+        const index = Number.parseInt(key);
+        materialsData[index] = {
+          description: descriptionMap[index].description || "",
+          fileType: descriptionMap[index].fileType || "image",
+          contentType: descriptionMap[index].contentType || "",
+        };
+      });
     }
-    //upload to cloudinary first
+
+    // Upload to Cloudinary with support for both images and videos
     const uploadPromises = files.map((file, index) => {
       return new Promise((resolve, reject) => {
+        const isVideo = file.mimetype.startsWith("video/");
+        const fileType =
+          materialsData[index]?.fileType || (isVideo ? "video" : "image");
+
+        const uploadOptions: any = {
+          folder: "campaign-materials",
+          resource_type: isVideo ? "video" : "image",
+        };
+
+        if (isVideo) {
+          // Video-specific options
+          uploadOptions.allowed_formats = [
+            "mp4",
+            "mov",
+            "avi",
+            "wmv",
+            "flv",
+            "webm",
+          ];
+          uploadOptions.transformation = [
+            {
+              width: 1920,
+              height: 1080,
+              crop: "limit",
+              quality: "auto",
+              fetch_format: "auto",
+            },
+          ];
+        } else {
+          // Image-specific options
+          uploadOptions.allowed_formats = ["jpg", "jpeg", "png", "gif", "webp"];
+          uploadOptions.transformation = [
+            {
+              width: 1000,
+              height: 1000,
+              crop: "limit",
+              quality: "auto",
+            },
+          ];
+        }
+
         const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: "campaign-materials",
-            allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
-            transformation: [
-              { width: 1000, height: 1000, crop: "limit", quality: "auto" },
-            ],
-          },
+          uploadOptions,
           (error, result) => {
             if (error) {
+              console.error(`Upload error for file ${index}:`, error);
               reject(error);
             } else {
               const description = materialsData[index]?.description || "";
               resolve({
                 imageUrl: result?.secure_url,
                 postDescription: description,
+                fileType: fileType,
+                mediaType: isVideo ? "video" : "image",
+                contentType: materialsData[index]?.contentType || "",
+                duration: result?.duration,
+                format: result?.format,
+                width: result?.width,
+                height: result?.height,
               });
             }
           }
@@ -105,15 +193,16 @@ export const uploadCampaignMaterials = async (req: Request, res: Response) => {
       });
     });
 
-    // Wait for all uploads to complete then save
+    // Wait for all uploads to complete
     const campaignMaterials: any = await Promise.all(uploadPromises);
 
+    // Add to campaign
     campaign.campaignMaterials.push(...campaignMaterials);
     await campaign.save();
 
     res.status(200).json({
       success: true,
-      message: `Successfully uploaded ${campaignMaterials.length} campaign materials`,
+      message: `Successfully uploaded ${campaignMaterials.length} campaign material(s)`,
       data: {
         campaignId: campaign._id,
         materialsCount: campaignMaterials.length,
@@ -130,16 +219,17 @@ export const uploadCampaignMaterials = async (req: Request, res: Response) => {
       });
     }
 
-    if (error.message === "Only image files are allowed") {
+    if (error.message === "Only image and video files are allowed") {
       return res.status(400).json({
         success: false,
-        message: "Only image files are allowed",
+        message: "Only image and video files are allowed",
       });
     }
 
     res.status(500).json({
       success: false,
       message: "Failed to upload campaign materials",
+      error: error.message,
     });
   }
 };

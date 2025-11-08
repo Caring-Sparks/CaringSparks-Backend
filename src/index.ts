@@ -9,6 +9,7 @@ import adminRoutes from "./routes/adminRoutes";
 import campaignRoutes from "./routes/campaignRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import deliverablesRoutes from "./routes/deliverablesRoutes";
+import reviewRoutes from "./routes/reviewRoutes";
 //ENV config
 dotenv.config();
 
@@ -19,9 +20,8 @@ const PORT = process.env.PORT || 5000;
 
 //CORS
 const allowedOrigins = [
+  process.env.ALLOWED_ORIGIN,
   "http://localhost:3000",
-  "https://caring-sparks.vercel.app",
-  "https://theprgod.com"
 ];
 
 app.use(
@@ -52,7 +52,8 @@ app.use("/api/influencers", influencerRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/deliverables", deliverablesRoutes);
-app.get("/", (_, res) => res.send("API is running 🚀"));
+app.use("/api/reviews", reviewRoutes);
+app.get("/", (_, res) => res.send("API is running"));
 
 // Start server
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

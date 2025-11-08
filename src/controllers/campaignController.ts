@@ -16,12 +16,14 @@ import {
   sendInfluencerAssignmentEmail,
   sendCampaignAcceptedEmail,
   sendCampaignDeclinedEmail,
+  sendInfluencerUnassignmentEmail,
 } from "../services/campaignEmailServices";
 import Influencer from "../models/Influencer";
 import nodemailer from "nodemailer";
 import {
   sendCampaignAssignmentWhatsApp,
   sendCampaignResponseWhatsApp,
+  sendCampaignUnassignmentWhatsApp,
 } from "../services/whatsAppService";
 
 interface AuthenticatedRequest extends Request {
@@ -68,10 +70,6 @@ export const createCampaign = async (
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
         authenticatedUser = decoded;
-        console.log(
-          "JWT decoded user:",
-          JSON.stringify(authenticatedUser, null, 2)
-        );
       } catch (jwtError) {
         console.error("JWT verification failed:", jwtError);
         return res.status(401).json({
@@ -121,7 +119,6 @@ export const createCampaign = async (
           });
         }
         userEmail = userFromDB.email;
-        console.log("Email fetched from database:", userEmail);
       } catch (dbError) {
         console.error("Error fetching user from database:", dbError);
         return res.status(500).json({
@@ -176,7 +173,6 @@ export const createCampaign = async (
       .map(([key]) => key);
 
     if (missingFields.length > 0) {
-      console.log("Missing required fields:", missingFields);
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
@@ -319,12 +315,7 @@ export const createCampaign = async (
         error
       );
 
-      // Check if it's specifically the email field causing the duplicate
       if (error.keyPattern && error.keyPattern.email) {
-        console.log(
-          "Email duplicate detected - this should be allowed. Attempting workaround..."
-        );
-
         return res.status(500).json({
           success: false,
           message:
@@ -596,8 +587,6 @@ export const updateCampaign = async (req: Request, res: Response) => {
       }
     }
 
-    // Send update notification emails if there were actual changes
-    // (and it's not just a status change from admin)
     if (updatedFields.length > 0 && !req.body.status) {
       try {
         await sendCampaignUpdateEmails({
@@ -608,10 +597,6 @@ export const updateCampaign = async (req: Request, res: Response) => {
           newData: campaign?.toObject() || {},
           updatedFields,
         });
-
-        console.log(
-          `✅ Update notification emails sent for ${updatedFields.length} changes`
-        );
       } catch (emailError) {
         console.error("Failed to send campaign update emails:", emailError);
         // Don't fail the request if email fails
@@ -773,6 +758,190 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
   }
 };
 
+export const unassignInfluencersFromCampaign = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+    const { influencerIds } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid campaign ID format",
+      });
+    }
+
+    if (!Array.isArray(influencerIds) || influencerIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Influencer IDs must be a non-empty array",
+      });
+    }
+
+    for (const influencerId of influencerIds) {
+      if (!mongoose.Types.ObjectId.isValid(influencerId)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid influencer ID format: ${influencerId}`,
+        });
+      }
+    }
+
+    const campaign = await Campaign.findById(id);
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        message: "Campaign not found",
+      });
+    }
+
+    const uniqueInfluencerIds = [...new Set(influencerIds)];
+
+    // Get currently assigned influencer IDs
+    const currentlyAssignedIds = campaign.assignedInfluencers.map((inf) =>
+      inf.influencerId.toString()
+    );
+
+    // Filter to only include influencers that are actually assigned
+    const influencersToRemove = uniqueInfluencerIds.filter((id) =>
+      currentlyAssignedIds.includes(id)
+    );
+
+    if (influencersToRemove.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "None of the provided influencers are assigned to this campaign",
+      });
+    }
+
+    // Get influencer details before removal for email notifications
+    const influencersToNotify = await Influencer.find({
+      _id: { $in: influencersToRemove },
+    }).select("name email whatsapp location phone");
+
+    // Remove the influencers from assignedInfluencers array
+    const updatedCampaign = await Campaign.findByIdAndUpdate(
+      id,
+      {
+        $pull: {
+          assignedInfluencers: {
+            influencerId: {
+              $in: influencersToRemove.map(
+                (id) => new mongoose.Types.ObjectId(id)
+              ),
+            },
+          },
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!updatedCampaign) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update campaign",
+      });
+    }
+
+    // Send email notifications to removed influencers
+    try {
+      const emailPromises = influencersToNotify.map(async (influencer) => {
+        try {
+          const campaignForEmail = convertCampaignForEmail(updatedCampaign);
+
+          const emailData = sendInfluencerUnassignmentEmail(
+            influencer.email,
+            influencer.name,
+            campaignForEmail
+          );
+
+          await transporter.sendMail({
+            from: `"CaringSparks Team" <${process.env.EMAIL_USER}>`,
+            ...emailData,
+          });
+        } catch (error) {
+          console.error(
+            `Failed to send unassignment email to ${influencer.email}:`,
+            error
+          );
+          throw error;
+        }
+      });
+
+      await Promise.allSettled(emailPromises);
+    } catch (emailError) {
+      console.error(
+        "Failed to send influencer unassignment emails:",
+        emailError
+      );
+    }
+
+    // Send WhatsApp notifications
+    try {
+      const whatsappPromises = influencersToNotify.map(async (influencer) => {
+        if (!influencer.whatsapp) {
+          return { success: false, reason: "no_whatsapp" };
+        }
+
+        try {
+          const result = await sendCampaignUnassignmentWhatsApp(
+            influencer.whatsapp,
+            influencer.name,
+            updatedCampaign
+          );
+
+          if (!result.success) {
+            console.error(
+              `Failed to send WhatsApp to ${influencer.name} (${influencer.whatsapp}):`,
+              result.error
+            );
+          }
+
+          return result;
+        } catch (error) {
+          console.error(`WhatsApp error for ${influencer.name}:`, error);
+          return { success: false, error: (error as Error).message };
+        }
+      });
+
+      const whatsappResults = await Promise.allSettled(whatsappPromises);
+
+      const successfulWhatsApp = whatsappResults.filter(
+        (result) => result.status === "fulfilled" && result.value.success
+      ).length;
+    } catch (whatsappError) {
+      console.error("Failed to send WhatsApp notifications:", whatsappError);
+    }
+
+    const totalAssigned = updatedCampaign.assignedInfluencers.length;
+
+    res.status(200).json({
+      success: true,
+      data: updatedCampaign,
+      message: `${influencersToRemove.length} influencer(s) unassigned successfully. Total assigned: ${totalAssigned}`,
+      summary: {
+        removed: influencersToRemove.length,
+        totalAssigned: totalAssigned,
+        campaignMinimum: campaign.influencersMin,
+        campaignMaximum: campaign.influencersMax,
+        minimumMet: totalAssigned >= campaign.influencersMin,
+      },
+    });
+  } catch (error) {
+    console.error("Unassign influencers error:", error);
+    res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
+  }
+};
+
 export const assignInfluencersToCampaign = async (
   req: Request,
   res: Response
@@ -857,7 +1026,7 @@ export const assignInfluencersToCampaign = async (
       influencerId: new mongoose.Types.ObjectId(influencerId),
       acceptanceStatus: "pending" as const,
       assignedAt: new Date(),
-      isCompleted: false,
+      isCompleted: "pending",
       submittedJobs: [],
     }));
 
@@ -898,7 +1067,7 @@ export const assignInfluencersToCampaign = async (
           );
 
           await transporter.sendMail({
-            from: `"CaringSparks Team" <${process.env.EMAIL_USER}>`,
+            from: `"The•PR•God Team" <${process.env.EMAIL_USER}>`,
             ...emailData,
           });
         } catch (error) {
@@ -918,9 +1087,7 @@ export const assignInfluencersToCampaign = async (
     // Send WhatsApp notifications
     try {
       const whatsappPromises = newInfluencers.map(async (influencer) => {
-        // Only send WhatsApp if whatsapp field exists
         if (!influencer.whatsapp) {
-          console.log(`No WhatsApp number for influencer ${influencer.name}`);
           return { success: false, reason: "no_whatsapp" };
         }
 
@@ -950,10 +1117,6 @@ export const assignInfluencersToCampaign = async (
       const successfulWhatsApp = whatsappResults.filter(
         (result) => result.status === "fulfilled" && result.value.success
       ).length;
-
-      console.log(
-        `WhatsApp notifications sent: ${successfulWhatsApp}/${newInfluencers.length}`
-      );
     } catch (whatsappError) {
       console.error("Failed to send WhatsApp notifications:", whatsappError);
     }
@@ -961,11 +1124,6 @@ export const assignInfluencersToCampaign = async (
     // Check if minimum requirement has been met
     const totalAssigned = updatedCampaign.assignedInfluencers.length;
     if (totalAssigned < campaign.influencersMin) {
-      console.log(
-        `Campaign still needs ${
-          campaign.influencersMin - totalAssigned
-        } more influencers`
-      );
     }
 
     res.status(200).json({
@@ -1123,6 +1281,16 @@ export const respondToCampaignAssignment = async (
       });
     }
 
+    const updateData: any = {
+      "assignedInfluencers.$.acceptanceStatus": status,
+      "assignedInfluencers.$.respondedAt": new Date(),
+      ...(message && { "assignedInfluencers.$.responseMessage": message }),
+    };
+
+    if (status === "accepted") {
+      updateData["assignedInfluencers.$.isCompleted"] = "in-progress";
+    }
+
     const campaign = await Campaign.findOneAndUpdate(
       {
         _id: campaignId,
@@ -1132,11 +1300,7 @@ export const respondToCampaignAssignment = async (
         "assignedInfluencers.acceptanceStatus": "pending",
       },
       {
-        $set: {
-          "assignedInfluencers.$.acceptanceStatus": status,
-          "assignedInfluencers.$.respondedAt": new Date(),
-          ...(message && { "assignedInfluencers.$.responseMessage": message }),
-        },
+        $set: updateData,
       },
       { new: true, runValidators: true }
     ).populate("userId", "brandName brandPhone email");
@@ -1149,7 +1313,6 @@ export const respondToCampaignAssignment = async (
       });
     }
 
-    // Send notifications based on response
     try {
       const brand = campaign.userId as any;
 
@@ -1165,82 +1328,7 @@ export const respondToCampaignAssignment = async (
       const influencerName = influencer.name;
 
       if (status === "accepted") {
-        // Send WhatsApp notification
-        if (brand.brandPhone) {
-          try {
-            await sendCampaignResponseWhatsApp(
-              brand.brandPhone,
-              brandName,
-              influencerName,
-              campaign.brandName,
-              "accepted",
-              message
-            );
-            console.log(
-              `WhatsApp sent to ${brand.brandPhone} for campaign acceptance`
-            );
-          } catch (whatsappError) {
-            console.error("WhatsApp notification failed:", whatsappError);
-          }
-        } else {
-          console.log("Brand has no phone number for WhatsApp");
-        }
-
-        // Send Email notification
-        if (brand.email) {
-          try {
-            await sendCampaignAcceptedEmail(
-              brand.email,
-              brandName,
-              influencerName,
-              campaign as any,
-              message
-            );
-          } catch (emailError) {
-            console.error("Email notification failed:", emailError);
-          }
-        } else {
-          console.log("Brand has no email address");
-        }
       } else {
-        // Send WhatsApp notification
-        if (brand.brandPhone) {
-          try {
-            await sendCampaignResponseWhatsApp(
-              brand.brandPhone,
-              brandName,
-              influencerName,
-              campaign.brandName,
-              "declined",
-              message
-            );
-            console.log(
-              `WhatsApp sent to ${brand.brandPhone} for campaign decline`
-            );
-          } catch (whatsappError) {
-            console.error("WhatsApp notification failed:", whatsappError);
-          }
-        } else {
-          console.log("Brand has no phone number for WhatsApp");
-        }
-
-        // Send Email notification
-        if (brand.email) {
-          try {
-            await sendCampaignDeclinedEmail(
-              brand.email,
-              brandName,
-              influencerName,
-              campaign as any,
-              message
-            );
-          } catch (emailError) {
-            console.error("Email notification failed:", emailError);
-            // Don't fail the request if email fails
-          }
-        } else {
-          console.log("Brand has no email address");
-        }
       }
     } catch (notificationError) {
       console.error("Failed to send notifications:", notificationError);

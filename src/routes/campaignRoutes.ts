@@ -10,6 +10,7 @@ import {
   assignInfluencersToCampaign,
   getAssignedCampaigns,
   respondToCampaignAssignment,
+  unassignInfluencersFromCampaign,
 } from "../controllers/campaignController";
 import { authenticateToken } from "../middleware/requireHeader";
 
@@ -22,6 +23,7 @@ router.post("/newCampaign", createCampaign);
 router.get("/email/:email", getCampaignsByEmail);
 router.put("/:id", updateCampaign);
 router.post("/:id/assign", assignInfluencersToCampaign);
+router.post("/:id/unassign", unassignInfluencersFromCampaign);
 router.put("/:id/payment", updatePaymentStatus);
 router.patch(
   "/:campaignId/respond",

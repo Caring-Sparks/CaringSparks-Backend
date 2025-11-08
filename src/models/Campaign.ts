@@ -1,14 +1,40 @@
 import mongoose, { Schema, type Document } from "mongoose";
 
-// Interface for individual influencer assignment
 export interface IAssignedInfluencer {
   influencerId: mongoose.Types.ObjectId;
   acceptanceStatus: "pending" | "accepted" | "declined";
   assignedAt: Date;
   respondedAt?: Date;
-  isCompleted: boolean;
+  isCompleted: string;
   completedAt?: Date;
   submittedJobs: ISubmittedJob[];
+  stashedDeliverables?: Array<{
+    stashId: string;
+    stashName?: string;
+    deliverables: Array<{
+      platform: string;
+      url: string;
+      description: string;
+      metrics?: {
+        views?: number;
+        likes?: number;
+        comments?: number;
+        shares?: number;
+      };
+    }>;
+    stashedAt: Date;
+  }>;
+}
+
+// Interface for review comments
+export interface IReviewComment {
+  _id?: mongoose.Types.ObjectId;
+  authorType: "brand" | "influencer";
+  authorId: mongoose.Types.ObjectId;
+  authorName: string;
+  comment: string;
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 // Interface for submitted job
@@ -19,12 +45,22 @@ export interface ISubmittedJob {
   isApproved?: boolean;
   approvedAt?: Date;
   rejectionReason?: string;
+  reviews: IReviewComment[];
 }
 
 // Interface for campaign materials
 export interface ICampaignMaterial {
+  _id?: mongoose.Types.ObjectId;
   imageUrl: string;
-  postDescription?: string;
+  contentType: string;
+  postDescription: string;
+  fileType?: "image" | "video";
+  mediaType?: "image" | "video";
+  duration?: number;
+  format?: string;
+  width?: number;
+  height?: number;
+  uploadedAt?: Date;
 }
 
 export interface ICampaign extends Document {
@@ -82,6 +118,37 @@ export interface ICampaign extends Document {
   updatedAt: Date;
 }
 
+// Schema for review comments
+const ReviewCommentSchema: Schema = new Schema(
+  {
+    authorType: {
+      type: String,
+      enum: ["brand", "influencer"],
+      required: [true, "Author type is required"],
+    },
+    authorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: [true, "Author ID is required"],
+      refPath: "authorType",
+    },
+    authorName: {
+      type: String,
+      required: [true, "Author name is required"],
+      trim: true,
+    },
+    comment: {
+      type: String,
+      required: [true, "Comment is required"],
+      trim: true,
+      maxlength: [1000, "Comment cannot exceed 1000 characters"],
+    },
+  },
+  {
+    _id: true,
+    timestamps: true,
+  }
+);
+
 // Schema for submitted jobs
 const SubmittedJobSchema: Schema = new Schema(
   {
@@ -111,6 +178,10 @@ const SubmittedJobSchema: Schema = new Schema(
       trim: true,
       maxlength: [200, "Rejection reason cannot exceed 200 characters"],
     },
+    reviews: {
+      type: [ReviewCommentSchema],
+      default: [],
+    },
   },
   { _id: true }
 );
@@ -136,14 +207,41 @@ const AssignedInfluencerSchema: Schema = new Schema(
       type: Date,
     },
     isCompleted: {
-      type: Boolean,
-      default: false,
+      type: String,
+      default: "pending",
     },
     completedAt: {
       type: Date,
     },
     submittedJobs: {
       type: [SubmittedJobSchema],
+      default: [],
+    },
+    stashedDeliverables: {
+      type: [
+        {
+          stashId: {
+            type: String,
+            required: true,
+            default: () => new mongoose.Types.ObjectId().toString(),
+          },
+          stashName: { type: String },
+          deliverables: [
+            {
+              platform: { type: String, required: true },
+              url: { type: String, required: true },
+              description: { type: String, required: true },
+              metrics: {
+                views: { type: Number, default: 0 },
+                likes: { type: Number, default: 0 },
+                comments: { type: Number, default: 0 },
+                shares: { type: Number, default: 0 },
+              },
+            },
+          ],
+          stashedAt: { type: Date, default: Date.now },
+        },
+      ],
       default: [],
     },
   },
@@ -155,13 +253,46 @@ const CampaignMaterialSchema: Schema = new Schema(
   {
     imageUrl: {
       type: String,
-      required: [true, "Material image URL is required"],
+      required: [true, "Material URL is required"],
       trim: true,
     },
     postDescription: {
       type: String,
+      required: [true, "Post description is required"],
       trim: true,
       maxlength: [1000, "Post description cannot exceed 1000 characters"],
+    },
+    fileType: {
+      type: String,
+      enum: ["image", "video"],
+      default: "image",
+    },
+    contentType: {
+      type: String,
+    },
+    mediaType: {
+      type: String,
+      enum: ["image", "video"],
+    },
+    duration: {
+      type: Number,
+      min: [0, "Duration cannot be negative"],
+    },
+    format: {
+      type: String,
+      trim: true,
+    },
+    width: {
+      type: Number,
+      min: [0, "Width cannot be negative"],
+    },
+    height: {
+      type: Number,
+      min: [0, "Height cannot be negative"],
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   { _id: true }

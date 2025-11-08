@@ -34,14 +34,14 @@ router.put(
 );
 router.post(
   "/upload-materials",
-  upload.fields([{ name: "images", maxCount: 10 }]),
+  upload.fields([
+    { name: "media", maxCount: 10 },
+    { name: "images", maxCount: 10 },
+  ]),
   uploadCampaignMaterials
 );
 router.get("/:campaignId/materials", getCampaignMaterials);
-router.delete(
-  "/:campaignId/materials/:materialId",
-  deleteCampaignMaterial
-);
+router.delete("/:campaignId/materials/:materialId", deleteCampaignMaterial);
 router.put("/update/:id", authenticateToken, requireAdmin, updateBrandDetails);
 router.delete("/delete/:id", authenticateToken, requireAdmin, deleteBrand);
 router.get("/:id", getBrandById);

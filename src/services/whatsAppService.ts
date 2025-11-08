@@ -152,6 +152,52 @@ export const getWhatsAppMessageStatus = async (messageId: string) => {
   }
 };
 
+
+export const sendCampaignUnassignmentWhatsApp = async (
+  whatsappNumber: string,
+  influencerName: string,
+  campaign: any
+) => {
+  try {
+    const campaignTitle =
+      campaign.title ||
+      `${campaign.role || "Brand Partnership"} with ${campaign.brandName}`;
+
+    const campaignId = campaign._id.toString().slice(-8).toUpperCase();
+
+    const message = `🔔 *Campaign Assignment Update*
+
+Hello ${influencerName},
+
+Your assignment to the following campaign has been removed:
+
+*Campaign:* ${campaignTitle}
+*Brand:* ${campaign.brandName}
+*Campaign ID:* #${campaignId}
+
+*What This Means:*
+• You are no longer required to complete deliverables
+• This does not affect your profile or future opportunities
+• Browse new campaigns on your dashboard
+
+💫 *Keep moving forward!* Many more exciting opportunities await you.
+
+Visit your dashboard: https://theprgod.com/influencer
+
+Questions? Contact support@theprgod.com
+
+—
+The•PR•God Team`;
+
+//pending function
+
+    return { success: true };
+  } catch (error) {
+    console.error("WhatsApp send error:", error);
+    return { success: false, error: (error as Error).message };
+  }
+};
+
 export const sendCampaignAssignmentWhatsApp = async (
   phoneNumber: string,
   influencerName: string,
@@ -273,5 +319,35 @@ Best regards,
 The The•PR•God Team`;
 
     return await sendWhatsAppMessage(phoneNumber, message);
+  }
+};
+
+export const sendCampaignCompletionWhatsApp = async (
+  phone: string,
+  brandName: string,
+  influencerName: string,
+  campaignName: string,
+  totalPosts: number
+) => {
+  try {
+    const message = `🎉 *Campaign Completed!*
+
+Hello ${brandName},
+
+Good news! ${influencerName} has completed all deliverables for your campaign "${campaignName}".
+
+📊 *Summary:*
+✅ Total Posts Submitted: ${totalPosts}
+✅ Status: Completed
+📅 Completed At: ${new Date().toLocaleDateString()}
+
+You can now review all the submitted work in your dashboard.
+
+Thank you for using our platform!`;
+
+    return { success: true };
+  } catch (error) {
+    console.error("WhatsApp send error:", error);
+    return { success: false, error };
   }
 };

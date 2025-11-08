@@ -1784,8 +1784,6 @@ export const sendCampaignEmails = async (
   }
 };
 
-// Add this function to your email file (after sendCampaignEmails)
-
 interface CampaignUpdateData {
   brandName: string;
   email: string;
@@ -2267,7 +2265,7 @@ export const sendCampaignUpdateEmails = async (
     
     <div class="content">
       <div class="success-message">
-        <div class="success-icon">✅</div>
+        <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
         <h3 style="margin: 0; color: #10b981;">Your changes have been saved!</h3>
         <p style="margin: 10px 0 0 0;">Campaign is now pending review</p>
       </div>

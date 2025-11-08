@@ -1252,6 +1252,385 @@ export const sendInfluencerAssignmentEmail = (
   };
 };
 
+export const sendInfluencerUnassignmentEmail = (
+  influencerEmail: string,
+  influencerName: string,
+  campaign: any,
+  loginUrl = "https://theprgod.com",
+  supportEmail = "support@theprgod.com"
+) => {
+  const campaignTitle =
+    campaign.title ||
+    `${campaign.role || "Brand Partnership"} with ${campaign.brandName}`;
+
+  const subject = `Campaign Assignment Update: ${campaignTitle}`;
+
+  return {
+    to: influencerEmail,
+    subject,
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: #f1f5f9;
+      font-family: 'Source Sans Pro', Arial, sans-serif;
+      line-height: 1.6;
+      color: #475569;
+    }
+
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      width: 100%;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #8b5cf6;
+    }
+
+    .welcome-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .content {
+      padding: 30px 20px;
+    }
+
+    .intro-text {
+      font-size: 16px;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 25px;
+      line-height: 1.7;
+    }
+
+    .status-card {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 2px solid #f59e0b;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    .status-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #d97706;
+      margin-bottom: 15px;
+    }
+
+    .status-message {
+      color: #92400e;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .campaign-details {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+
+    .campaign-details h3 {
+      color: #374151;
+      margin-top: 0;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-label {
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .detail-value {
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .info-card {
+      background-color: #dbeafe;
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+
+    .info-card h3 {
+      color: #1e40af;
+      margin-top: 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-list {
+      color: #1e3a8a;
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .info-list li {
+      margin-bottom: 8px;
+    }
+
+    .reassurance-box {
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+      border: 2px solid #0ea5e9;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 25px 0;
+      text-align: center;
+    }
+
+    .reassurance-title {
+      color: #0369a1;
+      margin-top: 0;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .reassurance-text {
+      color: #075985;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .cta-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      margin: 0 10px 10px 0;
+    }
+
+    .cta-button-secondary {
+      display: inline-block;
+      background: #ffffff;
+      color: #3b82f6 !important;
+      text-decoration: none;
+      padding: 14px 28px;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      margin: 0 10px 10px 0;
+    }
+
+    .footer {
+      background-color: #f8fafc;
+      padding: 20px 15px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .footer-text {
+      color: #64748b;
+      font-size: 13px;
+      margin: 0 0 10px 0;
+    }
+
+    .footer-links {
+      margin: 10px 0;
+    }
+
+    .footer-links a {
+      color: #3b82f6;
+      text-decoration: none;
+      margin: 0 10px;
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+
+    @media only screen and (max-width: 600px) {
+      .welcome-title {
+        font-size: 22px !important;
+      }
+      .intro-text {
+        font-size: 15px !important;
+      }
+      .cta-button, .cta-button-secondary {
+        display: block !important;
+        width: calc(100% - 40px) !important;
+        margin: 10px 0 !important;
+      }
+      .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo" />
+      <h1 class="welcome-title">Campaign Assignment Update</h1>
+    </div>
+    
+    <div class="content">
+      <p class="intro-text">
+        Hello <strong>${influencerName}</strong>, we're reaching out to inform you about an update to your campaign assignment with <strong>${
+      campaign.brandName
+    }</strong>.
+      </p>
+      
+      <div class="status-card">
+        <h2 class="status-title">⚠️ Assignment Removed</h2>
+        <div class="status-message">
+          Your assignment to the "${campaignTitle}" campaign has been removed. This decision was made by the brand or campaign management team.
+        </div>
+      </div>
+      
+      <div class="campaign-details">
+        <h3>📋 Campaign Details</h3>
+        <div class="detail-row">
+          <span class="detail-label">Campaign:</span>
+          <span class="detail-value">${campaignTitle}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Brand:</span>
+          <span class="detail-value">${campaign.brandName}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Type:</span>
+          <span class="detail-value">${
+            campaign.role || "Brand Partnership"
+          }</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Platforms:</span>
+          <span class="detail-value">${
+            campaign.platforms?.join(", ") || "Multiple Platforms"
+          }</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Campaign ID:</span>
+          <span class="detail-value">#${campaign._id
+            .toString()
+            .slice(-8)
+            .toUpperCase()}</span>
+        </div>
+      </div>
+      
+      <div class="info-card">
+        <h3>ℹ️ What This Means</h3>
+        <ul class="info-list">
+          <li>You are <strong>no longer required</strong> to complete deliverables for this campaign</li>
+          <li>Any submitted work will not be processed for this campaign</li>
+          <li>This <strong>does not affect</strong> your profile rating or future opportunities</li>
+          <li>You are free to focus on other active campaigns or new opportunities</li>
+        </ul>
+      </div>
+      
+      <div class="reassurance-box">
+        <h3 class="reassurance-title">💫 Keep Moving Forward!</h3>
+        <p class="reassurance-text">
+          Campaign adjustments are a normal part of influencer marketing. This change doesn't reflect on your profile or capabilities. We have many more exciting opportunities waiting for you on our platform!
+        </p>
+      </div>
+      
+      <div class="cta-container">
+        <a href="${loginUrl}/influencer" class="cta-button">
+          Browse New Campaigns
+        </a>
+        <a href="${loginUrl}/influencer/campaigns" class="cta-button-secondary">
+          View My Active Campaigns
+        </a>
+      </div>
+      
+      <div style="background-color: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0; color: #15803d; font-size: 14px; font-weight: 500;">
+          💡 <strong>Stay Active:</strong> Log in to your dashboard to explore new campaign opportunities that match your profile!
+        </p>
+      </div>
+      
+      <p style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
+        If you have any questions about this change or need clarification, please don't hesitate to contact our support team. We're here to help!
+      </p>
+    </div>
+    
+    <div class="footer">
+      <p class="footer-text">
+        This email was sent regarding your campaign assignment on The•PR•God.
+      </p>
+      
+      <div class="footer-links">
+        <a href="${loginUrl}/influencer">Dashboard</a>
+        <a href="mailto:${supportEmail}">Support</a>
+        <a href="https://theprgod.com/help">Help Center</a>
+        <a href="https://theprgod.com/privacy">Privacy Policy</a>
+      </div>
+      
+      <p class="footer-text">
+        © ${new Date().getFullYear()} The•PR•God. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`,
+  };
+};
+
 export const sendCampaignAcceptedEmail = async (
   to: string,
   brandName: string,
@@ -1601,7 +1980,9 @@ export const sendCampaignAcceptedEmail = async (
       </div>
       
       <div class="cta-container">
-        <a href="${loginUrl}/brand/campaigns/${campaign._id}" class="cta-button">
+        <a href="${loginUrl}/brand/campaigns/${
+      campaign._id
+    }" class="cta-button">
           View Campaign Dashboard
         </a>
         <a href="${loginUrl}/brand/messages" class="cta-button-secondary">
@@ -1993,7 +2374,9 @@ export const sendCampaignDeclinedEmail = async (
       </div>
       
       <div class="cta-container">
-        <a href="${loginUrl}/brand/campaigns/${campaign._id}" class="cta-button">
+        <a href="${loginUrl}/brand/campaigns/${
+      campaign._id
+    }" class="cta-button">
           View Campaign Dashboard
         </a>
         <a href="mailto:${supportEmail}" class="cta-button-secondary">

@@ -11,6 +11,8 @@ export interface MulterFiles {
   "threads.proof"?: Express.Multer.File;
   "snapchat.proof"?: Express.Multer.File;
   audienceProof?: Express.Multer.File;
+  media?: Express.Multer.File[];
+  images?: Express.Multer.File[];
 }
 export interface InfluencerRequest extends Omit<Request, "files"> {
   files?: MulterFiles;
