@@ -11,6 +11,8 @@ import campaignRoutes from "./routes/campaignRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import deliverablesRoutes from "./routes/deliverablesRoutes";
 import reviewRoutes from "./routes/reviewRoutes";
+import stmpRoutes from "./routes/smtpRoutes";
+
 
 //ENV config
 dotenv.config();
@@ -115,6 +117,7 @@ app.use("/api/campaigns", writeOperationLimiter, campaignRoutes);
 app.use("/api/payment", paymentLimiter, paymentRoutes);
 app.use("/api/deliverables", writeOperationLimiter, deliverablesRoutes);
 app.use("/api/reviews", writeOperationLimiter, reviewRoutes);
+app.use("/api/smtp", writeOperationLimiter, stmpRoutes);
 
 app.get("/", readOperationLimiter, (_, res) => res.send("API is running"));
 
