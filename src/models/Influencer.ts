@@ -37,6 +37,7 @@ export interface IInfluencer extends Document {
   malePercentage?: string;
   femalePercentage?: string;
   audienceProofUrl?: string;
+  referral?: string;
 
   // Payment details
   paymentMethod?: "bank" | "crypto";
@@ -174,6 +175,10 @@ const InfluencerSchema: Schema = new Schema(
       required: true,
       trim: true,
       maxlength: 100,
+    },
+    referral: {
+      type: String,
+      default: "",
     },
     niches: [
       {
@@ -650,7 +655,7 @@ const InfluencerSchema: Schema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.model<IInfluencer>("Influencer", InfluencerSchema);

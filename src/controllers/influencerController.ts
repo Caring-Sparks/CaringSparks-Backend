@@ -14,7 +14,7 @@ import { sendInfluencerStatusWhatsApp } from "../services/whatsAppService";
 // Create a new influencer
 export const createInfluencer = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const filesMap: { [key: string]: Express.Multer.File } = {};
@@ -59,6 +59,7 @@ export const createInfluencer = async (
       audienceLocation,
       malePercentage,
       femalePercentage,
+      referral,
     } = parsedBody;
 
     const requiredFields = ["name", "email", "phone", "whatsapp", "location"];
@@ -143,6 +144,7 @@ export const createInfluencer = async (
       maxMonthlyEarnings: Number(parsedBody.maxMonthlyEarnings) || 0,
       maxMonthlyEarningsNaira: Number(parsedBody.maxMonthlyEarningsNaira) || 0,
       followersCount: Number(parsedBody.followersCount) || 0,
+      referral: referral || "",
     };
 
     const platforms = [
@@ -217,7 +219,7 @@ export const createInfluencer = async (
                     influencerData[platform].proofUrl = result?.secure_url;
                     resolve(result);
                   }
-                }
+                },
               );
               uploadStream.end(proofFile.buffer);
             });
@@ -253,7 +255,7 @@ export const createInfluencer = async (
               influencerData.audienceProofUrl = result?.secure_url;
               resolve(result);
             }
-          }
+          },
         );
         uploadStream.end(audienceProofFile.buffer);
       });
@@ -328,7 +330,7 @@ export const createInfluencer = async (
 // Update the influencer data
 export const updateInfluencer = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -541,7 +543,7 @@ export const updateInfluencer = async (
                       } catch (deleteError) {
                         console.error(
                           `Failed to delete old ${platform} proof file:`,
-                          deleteError
+                          deleteError,
                         );
                       }
                     }
@@ -549,7 +551,7 @@ export const updateInfluencer = async (
                     updates[platform].proofUrl = result?.secure_url;
                     resolve(result);
                   }
-                }
+                },
               );
               uploadStream.end(proofFile.buffer);
             });
@@ -588,7 +590,7 @@ export const updateInfluencer = async (
                 } catch (deleteError) {
                   console.error(
                     "Failed to delete old audience proof file:",
-                    deleteError
+                    deleteError,
                   );
                 }
               }
@@ -596,7 +598,7 @@ export const updateInfluencer = async (
               updates.audienceProofUrl = result?.secure_url;
               resolve(result);
             }
-          }
+          },
         );
         uploadStream.end(audienceProofFile.buffer);
       });
@@ -658,7 +660,7 @@ export const updateInfluencer = async (
 // Get all influencers
 export const getInfluencers = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const page = Number.parseInt(req.query.page as string) || 1;
@@ -774,7 +776,7 @@ export const updateInfluencerStatus = async (req: Request, res: Response) => {
     const influencer = await Influencer.findByIdAndUpdate(
       id,
       { status },
-      { new: true }
+      { new: true },
     ).select("-password");
 
     if (!influencer) {
@@ -792,7 +794,7 @@ export const updateInfluencerStatus = async (req: Request, res: Response) => {
         await sendInfluencerStatusEmail(
           influencer.email,
           influencer.name,
-          status
+          status,
         );
       } catch (emailError) {
         console.error("Failed to send status email:", emailError);
@@ -804,7 +806,7 @@ export const updateInfluencerStatus = async (req: Request, res: Response) => {
           await sendInfluencerStatusWhatsApp(
             influencer.whatsapp,
             influencer.name,
-            status
+            status,
           );
         } catch (whatsappError) {
           console.error("Failed to send WhatsApp notification:", whatsappError);
@@ -1036,7 +1038,7 @@ export const getInfluencerStats = async (req: Request, res: Response) => {
 // Bulk update influencer status
 export const bulkUpdateInfluencerStatus = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const { influencerIds, status } = req.body;
@@ -1061,7 +1063,7 @@ export const bulkUpdateInfluencerStatus = async (
 
     // Validate all IDs are valid MongoDB ObjectIds
     const invalidIds = influencerIds.filter(
-      (id) => !id.match(/^[0-9a-fA-F]{24}$/)
+      (id) => !id.match(/^[0-9a-fA-F]{24}$/),
     );
     if (invalidIds.length > 0) {
       res.status(400).json({
@@ -1074,7 +1076,7 @@ export const bulkUpdateInfluencerStatus = async (
     // Update multiple influencers
     const result = await Influencer.updateMany(
       { _id: { $in: influencerIds } },
-      { status, updatedAt: new Date() }
+      { status, updatedAt: new Date() },
     );
 
     res.status(200).json({
@@ -1106,7 +1108,7 @@ interface AuthenticatedRequest extends Request {
 // Update influencer payment details
 export const updateInfluencerPaymentDetails = async (
   req: AuthenticatedRequest,
-  res: Response
+  res: Response,
 ) => {
   try {
     const {
@@ -1228,7 +1230,7 @@ export const updateInfluencerPaymentDetails = async (
     const updatedInfluencer = await Influencer.findByIdAndUpdate(
       userId,
       updateData,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).select("-password -passwordResetToken -passwordResetExpires");
 
     if (!updatedInfluencer) {
@@ -1252,7 +1254,7 @@ export const updateInfluencerPaymentDetails = async (
 
     if (error.name === "ValidationError") {
       const validationErrors = Object.values(error.errors).map(
-        (err: any) => err.message
+        (err: any) => err.message,
       );
       return res.status(400).json({
         success: false,
@@ -1272,7 +1274,7 @@ export const updateInfluencerPaymentDetails = async (
 // Get influencer payment details (both bank and crypto)
 export const getInfluencerPaymentDetails = async (
   req: AuthenticatedRequest,
-  res: Response
+  res: Response,
 ) => {
   try {
     const userId = req.user?.id || req.user?._id;
@@ -1286,7 +1288,7 @@ export const getInfluencerPaymentDetails = async (
 
     const influencer = await Influencer.findById(userId)
       .select(
-        "bankDetails hasBankDetails cryptoDetails hasCryptoDetails paymentMethod"
+        "bankDetails hasBankDetails cryptoDetails hasCryptoDetails paymentMethod",
       )
       .lean();
 
@@ -1320,7 +1322,7 @@ export const getInfluencerPaymentDetails = async (
 // Admin endpoint to verify payment details (bank or crypto)
 export const verifyInfluencerPaymentDetails = async (
   req: AuthenticatedRequest,
-  res: Response
+  res: Response,
 ) => {
   try {
     const { influencerId, paymentType, isVerified } = req.body;
@@ -1360,9 +1362,9 @@ export const verifyInfluencerPaymentDetails = async (
           [updateField]: isVerified,
         },
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).select(
-      "bankDetails hasBankDetails cryptoDetails hasCryptoDetails paymentMethod name email"
+      "bankDetails hasBankDetails cryptoDetails hasCryptoDetails paymentMethod name email",
     );
 
     if (!updatedInfluencer) {
@@ -1394,7 +1396,7 @@ export const verifyInfluencerPaymentDetails = async (
 // Legacy endpoint for backward compatibility (redirects to new endpoint)
 export const updateInfluencerBankDetails = async (
   req: AuthenticatedRequest,
-  res: Response
+  res: Response,
 ) => {
   req.body = {
     paymentType: "bank",
